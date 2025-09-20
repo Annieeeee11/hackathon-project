@@ -7,7 +7,7 @@ interface CourseCardProps {
   export default function CourseCard({ id, title, progress }: CourseCardProps) {
     return (
       <div className="p-4 bg-white rounded-xl shadow">
-        <h3 className="font-bold">{title}</h3>
+        <h3 className="font-bold text-gray-500">{title}</h3>
         <div className="w-full bg-gray-200 rounded-full h-3 mt-2">
           <div
             className="bg-blue-600 h-3 rounded-full"

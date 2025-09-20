@@ -3,6 +3,8 @@ import { cn } from "@/lib/utils";
 import React, { useState, createContext, useContext } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { IconMenu2, IconX } from "@tabler/icons-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 interface Links {
   label: string;
@@ -163,11 +165,17 @@ export const SidebarLink = ({
   className?: string;
 }) => {
   const { open, animate } = useSidebar();
+  const pathname = usePathname();
+  const isActive = pathname === link.href;
+
   return (
-    <a
+    <Link
       href={link.href}
       className={cn(
-        "flex items-center justify-start gap-2  group/sidebar py-2",
+        "flex items-center justify-start gap-2 group/sidebar py-2 px-3 rounded-lg transition-colors",
+        isActive 
+          ? "bg-primary text-primary-foreground" 
+          : "text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700",
         className
       )}
       {...props}
@@ -179,10 +187,10 @@ export const SidebarLink = ({
           display: animate ? (open ? "inline-block" : "none") : "inline-block",
           opacity: animate ? (open ? 1 : 0) : 1,
         }}
-        className="text-neutral-700 dark:text-neutral-200 text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
+        className="text-sm group-hover/sidebar:translate-x-1 transition duration-150 whitespace-pre inline-block !p-0 !m-0"
       >
         {link.label}
       </motion.span>
-    </a>
+    </Link>
   );
 };

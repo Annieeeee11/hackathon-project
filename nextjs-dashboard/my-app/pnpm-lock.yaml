@@ -65,6 +65,9 @@ importers:
       tailwind-merge:
         specifier: ^3.3.1
         version: 3.3.1
+      three:
+        specifier: ^0.180.0
+        version: 0.180.0
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3
@@ -81,6 +84,9 @@ importers:
       '@types/react-dom':
         specifier: ^19
         version: 19.1.9(@types/react@19.1.13)
+      '@types/three':
+        specifier: ^0.180.0
+        version: 0.180.0
       eslint:
         specifier: ^9
         version: 9.36.0(jiti@2.5.1)
