@@ -51,51 +51,51 @@ export default function ChatPage() {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = input.trim();
     setInput("");
     setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
+    try {
+      // Call the AI chat API
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          question: currentInput,
+          context: 'general_chat'
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get AI response');
+      }
+
+      const data = await response.json();
+      
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         role: "ai",
-        text: generateAIResponse(input.trim()),
+        text: data.answer || 'Sorry, I encountered an error. Please try again.',
         timestamp: new Date()
       };
+
       setMessages(prev => [...prev, aiResponse]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "ai",
+        text: 'Sorry, I encountered an error. Please try again.',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
-  const generateAIResponse = (question: string): string => {
-    const responses = [
-      "That's a great question! Let me explain that concept in detail...",
-      "I'm glad you asked! Here's how that works:",
-      "Excellent question! This is a common area of confusion. Let me clarify:",
-      "Perfect! Let me break this down for you:",
-      "That's a key concept! Here's what you need to know:"
-    ];
-    
-    const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-    
-    if (question.toLowerCase().includes("react") || question.toLowerCase().includes("component")) {
-      return `${randomResponse} React is a powerful library for building user interfaces. Components are the building blocks of React applications. They let you split the UI into independent, reusable pieces. Would you like me to show you a specific example or explain any particular aspect in more detail?`;
-    }
-    
-    if (question.toLowerCase().includes("javascript") || question.toLowerCase().includes("js")) {
-      return `${randomResponse} JavaScript is a versatile programming language that's essential for web development. It's used for both frontend and backend development. The language has evolved significantly with ES6+ features like arrow functions, destructuring, and async/await. What specific aspect of JavaScript would you like to explore?`;
-    }
-    
-    if (question.toLowerCase().includes("algorithm") || question.toLowerCase().includes("data structure")) {
-      return `${randomResponse} Algorithms and data structures are fundamental concepts in computer science. They help you write efficient code and solve complex problems. Common data structures include arrays, linked lists, stacks, queues, trees, and graphs. Would you like me to explain any specific algorithm or data structure?`;
-    }
-    
-    if (question.toLowerCase().includes("help") || question.toLowerCase().includes("stuck")) {
-      return `${randomResponse} I'm here to help! Learning programming can be challenging, but with practice and the right approach, you'll get there. Try breaking down complex problems into smaller parts, practice regularly, and don't hesitate to ask questions. What specific challenge are you facing?`;
-    }
-    
-    return `${randomResponse} I'm here to help you learn and grow as a developer. Feel free to ask me about any programming concept, best practices, or learning strategies. I can help with code examples, explanations, and guidance on your learning path. What would you like to explore?`;
-  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
