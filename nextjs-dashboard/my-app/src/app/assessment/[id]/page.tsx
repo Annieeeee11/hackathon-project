@@ -1,16 +1,11 @@
 "use client"
 
 import { useState, useEffect, use } from "react";
-import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar";
-import { ModeToggle } from "@/components/modeToggle";
+import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import CodeEditor from "@/components/assessment/CodeEditor";
 import ResultPanel from "@/components/assessment/ResultPanel";
 import { 
-  IconBook, 
-  IconBrain, 
-  IconMessageCircle, 
-  IconTrophy,
   IconArrowLeft,
   IconCheck,
   IconClock,
@@ -19,15 +14,8 @@ import {
   IconBulb,
   IconLoader2
 } from "@tabler/icons-react";
+import { ModeToggle } from "@/components/modeToggle";
 
-const sidebarLinks = [
-  { label: "Dashboard", href: "/dashboard", icon: <IconBrain className="w-5 h-5" /> },
-  { label: "Generate Course", href: "/", icon: <IconBrain className="w-5 h-5" /> },
-  { label: "My Courses", href: "/courses", icon: <IconBook className="w-5 h-5" /> },
-  { label: "Assessments", href: "/assessments", icon: <IconBrain className="w-5 h-5" /> },
-  { label: "Chat with AI", href: "/chat", icon: <IconMessageCircle className="w-5 h-5" /> },
-  { label: "Leaderboard", href: "/leaderboard", icon: <IconTrophy className="w-5 h-5" /> },
-];
 
 interface Assessment {
   id: string;
@@ -141,30 +129,54 @@ export default SearchableList;`,
   }, [timeRemaining, isCompleted, assessment]);
 
   const handleSubmit = async (code: string) => {
-    if (isSubmitting || isCompleted) return;
+    if (isSubmitting || isCompleted || !assessment) return;
     
     setIsSubmitting(true);
     
     try {
-      // Simulate API call to Judge0
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const mockResult: Result = {
-        success: true,
-        feedback: "Great work! Your component handles all the test cases correctly. Consider adding accessibility features like ARIA labels for better user experience.",
-        score: 85,
-        testResults: assessment?.testCases.map((testCase, index) => ({
-          testCase,
-          passed: index < 2, // Mock: first 2 tests pass
-          actualOutput: index < 2 ? testCase.expectedOutput : "Error: Component not found",
-          error: index >= 2 ? "Component 'SearchableList' is not defined" : undefined
-        })) || [],
-        executionTime: 1.2
-      };
-      
-      setResult(mockResult);
-      setIsCompleted(true);
+      // Call real Judge0 API
+      const response = await fetch('/api/submit-assessment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code,
+          language: assessment.language,
+          testCases: assessment.testCases,
+          expectedOutput: assessment.testCases[0]?.expectedOutput
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        const result: Result = {
+          success: true,
+          feedback: data.result.feedback,
+          score: data.result.score,
+          testResults: data.result.testResults || assessment.testCases.map((testCase, index) => ({
+            testCase,
+            passed: data.result.output?.trim() === testCase.expectedOutput.trim(),
+            actualOutput: data.result.output || '',
+            error: data.result.error
+          })),
+          executionTime: parseFloat(data.result.executionTime) || 0
+        };
+        
+        setResult(result);
+        setIsCompleted(true);
+      } else {
+        setResult({
+          success: false,
+          feedback: data.result?.feedback || "There was an error running your code. Please check for syntax errors and try again.",
+          score: 0,
+          testResults: [],
+          executionTime: 0
+        });
+      }
     } catch (error) {
+      console.error('Assessment submission error:', error);
       setResult({
         success: false,
         feedback: "There was an error running your code. Please check for syntax errors and try again.",
@@ -197,16 +209,8 @@ export default SearchableList;`,
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar>
-        <SidebarBody className="flex flex-col gap-2 p-4">
-          {sidebarLinks.map((link) => (
-            <SidebarLink key={link.href} link={link} />
-          ))}
-        </SidebarBody>
-      </Sidebar>
-
-      <main className="flex-1 flex flex-col overflow-hidden">
+    <AppLayout>
+      <div className="flex-1 flex flex-col overflow-hidden">
         <header className="flex justify-between items-center p-6 border-b">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="sm" onClick={() => window.history.back()}>
@@ -309,7 +313,7 @@ export default SearchableList;`,
             </div>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 }

@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { openai } from "@/lib/openaiClient";
 import { supabase } from "@/lib/supabaseClient";
 
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { tags } = await req.json();
+    const { tags, userId } = await request.json()
 
     if (!tags || !Array.isArray(tags) || tags.length === 0) {
       return NextResponse.json({ error: "At least one tag is required" }, { status: 400 });

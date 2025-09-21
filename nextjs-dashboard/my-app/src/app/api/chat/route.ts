@@ -12,7 +12,13 @@ export async function POST(req: Request) {
     // Generate AI answer using OpenAI
     const answer = await generateAIAnswer(question, lessonId, context);
 
-    return NextResponse.json({ success: true, answer });
+      return NextResponse.json({ success: true, answer });
+    } catch (openaiError) {
+      console.error("OpenAI error:", openaiError);
+      // Fallback response if OpenAI fails
+      const fallbackAnswer = `I'm having trouble processing your question right now. Please try rephrasing it or ask about a specific programming concept.`;
+      return NextResponse.json({ success: true, answer: fallbackAnswer });
+    }
   } catch (error) {
     console.error("Error in chat:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

@@ -1,7 +1,78 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from '@supabase/supabase-js'
+import { env } from './env'
 
-if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-  throw new Error("Missing Supabase environment variables");
+const { supabaseUrl, supabaseAnonKey, supabaseServiceKey } = env
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  }
+})
+
+// Service role client for admin operations
+export const supabaseAdmin = supabaseServiceKey 
+  ? createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+  : null
+
+// Type definitions
+interface UserProfile {
+  id: string;
+  email?: string;
+  full_name?: string;
+  avatar_url?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface CourseEnrollment {
+  user_id: string;
+  course_id: string;
+  enrollment_date: string;
+  progress_percentage: number;
+  status: 'active' | 'completed' | 'paused';
+  last_accessed: string;
+}
+
+interface UserProgress {
+  user_id: string;
+  lesson_id: string;
+  course_id: string;
+  completed: boolean;
+  score?: number;
+  time_spent?: number;
+  updated_at: string;
+}
+
+interface ChatHistory {
+  user_id: string;
+  course_id: string;
+  lesson_id: string;
+  question: string;
+  answer: string;
+  created_at: string;
+}
+
+interface LearningAnalytics {
+  user_id: string;
+  course_id: string;
+  session_duration: number;
+  lessons_completed: number;
+  created_at: string;
 }
 
 // Client-side Supabase client (uses anon key)
