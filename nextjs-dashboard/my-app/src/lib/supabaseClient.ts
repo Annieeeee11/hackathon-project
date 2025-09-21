@@ -1,9 +1,9 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { env } from './env'
 
 const { supabaseUrl, supabaseAnonKey, supabaseServiceKey } = env
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
@@ -13,7 +13,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Service role client for admin operations
 export const supabaseAdmin = supabaseServiceKey 
-  ? createClient(supabaseUrl, supabaseServiceKey, {
+  ? createSupabaseClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false
@@ -22,65 +22,165 @@ export const supabaseAdmin = supabaseServiceKey
   : null
 
 // Type definitions
-interface UserProfile {
+export interface UserProfile {
   id: string;
   email?: string;
   full_name?: string;
   avatar_url?: string;
+  bio?: string;
+  learning_goals?: string[];
+  preferred_language?: string;
+  timezone?: string;
   created_at?: string;
   updated_at?: string;
 }
 
-interface Course {
+export interface Course {
   id: string;
   title: string;
   description: string;
+  short_description?: string;
+  duration: string;
+  difficulty_level: 'Beginner' | 'Intermediate' | 'Advanced';
+  estimated_hours: number;
+  tags: string[];
+  thumbnail_url?: string;
+  is_published: boolean;
+  created_by: string;
   created_at: string;
   updated_at: string;
 }
 
-interface CourseEnrollment {
+export interface Lesson {
+  id: string;
+  course_id: string;
+  title: string;
+  content: string;
+  explanation: string;
+  code_example?: string;
+  key_points: string[];
+  duration: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  order_index: number;
+  is_published: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Assessment {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  time_limit: number;
+  instructions: string;
+  starter_code?: string;
+  test_cases: any[];
+  expected_output?: string;
+  course_id?: string;
+  lesson_id?: string;
+  is_published: boolean;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CourseEnrollment {
+  id: string;
   user_id: string;
   course_id: string;
   enrollment_date: string;
   progress_percentage: number;
-  status: 'active' | 'completed' | 'paused';
+  status: 'active' | 'completed' | 'paused' | 'dropped';
   last_accessed: string;
+  completed_at?: string;
 }
 
-interface UserProgress {
+export interface UserProgress {
+  id: string;
   user_id: string;
   lesson_id: string;
   course_id: string;
   completed: boolean;
-  score?: number;
-  time_spent?: number;
+  time_spent: number;
+  last_position: number;
+  completed_at?: string;
+  created_at: string;
   updated_at: string;
 }
 
-interface ChatHistory {
+export interface AssessmentAttempt {
+  id: string;
   user_id: string;
-  course_id: string;
-  lesson_id: string;
+  assessment_id: string;
+  status: 'not-started' | 'in-progress' | 'completed' | 'abandoned';
+  score?: number;
+  submitted_code?: string;
+  execution_result?: any;
+  time_spent?: number;
+  started_at?: string;
+  completed_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChatHistory {
+  id: string;
+  user_id: string;
+  course_id?: string;
+  lesson_id?: string;
+  assessment_id?: string;
+  context: 'general_chat' | 'lesson_chat' | 'assessment_help' | 'course_guidance';
   question: string;
   answer: string;
+  message_type: 'text' | 'code' | 'explanation';
   created_at: string;
 }
 
-interface LearningAnalytics {
+export interface LearningAnalytics {
+  id: string;
   user_id: string;
-  course_id: string;
+  course_id?: string;
   session_duration: number;
   lessons_completed: number;
+  assessments_completed: number;
+  total_score: number;
+  session_date: string;
   created_at: string;
 }
 
-interface Achievement {
+export interface Achievement {
+  id: string;
   user_id: string;
   title: string;
   description: string;
-  type: string;
+  type: 'course_completion' | 'streak' | 'assessment_score' | 'learning_time' | 'milestone';
+  icon_url?: string;
+  points: number;
   earned_at: string;
+  metadata: any;
+}
+
+export interface UserStreak {
+  id: string;
+  user_id: string;
+  current_streak: number;
+  longest_streak: number;
+  last_activity_date?: string;
+  streak_type: 'daily' | 'weekly';
+  created_at: string;
+  updated_at: string;
+}
+
+// Create client function for API routes
+export function createClient() {
+  return createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    }
+  });
 }
 
 // Helper functions for database operations

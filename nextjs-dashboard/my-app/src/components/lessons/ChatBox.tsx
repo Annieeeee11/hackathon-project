@@ -27,15 +27,26 @@ const formatTime = (date: Date): string => {
   return `${displayHours}:${displayMinutes} ${ampm}`;
 };
 
-export default function ChatBox({ lessonId }: { lessonId: string }) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      role: "ai",
-      text: "Hello! I'm your AI Professor. I'm here to help you understand this lesson better. Feel free to ask me any questions!",
-      timestamp: new Date()
-    }
-  ])
+interface ChatBoxProps {
+  lessonId: string;
+  courseId?: string;
+  assessmentId?: string;
+  onSendMessage?: (message: string) => Promise<void>;
+  messages?: Message[];
+  isLoading?: boolean;
+  placeholder?: string;
+}
+
+export default function ChatBox({ 
+  lessonId, 
+  courseId, 
+  assessmentId, 
+  onSendMessage, 
+  messages: externalMessages, 
+  isLoading: externalIsLoading,
+  placeholder = "Ask me anything about this lesson..."
+}: ChatBoxProps) {
+  const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isClient, setIsClient] = useState(false)
@@ -43,10 +54,56 @@ export default function ChatBox({ lessonId }: { lessonId: string }) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<any>(null)
 
+  // Use external messages if provided, otherwise use internal state
+  const displayMessages = externalMessages || messages;
+  const displayIsLoading = externalIsLoading !== undefined ? externalIsLoading : isLoading;
+
   // Ensure we're on the client side to prevent hydration issues
   useEffect(() => {
     setIsClient(true)
-  }, [])
+    loadChatHistory()
+  }, [lessonId, courseId, assessmentId])
+
+  const loadChatHistory = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (lessonId) params.append('lessonId', lessonId);
+      if (courseId) params.append('courseId', courseId);
+      if (assessmentId) params.append('assessmentId', assessmentId);
+
+      const response = await fetch(`/api/chat?${params.toString()}`);
+      if (response.ok) {
+        const data = await response.json();
+        const formattedMessages = data.messages.map((msg: any) => ({
+          id: msg.id,
+          role: msg.question ? 'user' : 'ai',
+          text: msg.question || msg.answer,
+          timestamp: new Date(msg.created_at)
+        }));
+        
+        // Add welcome message if no messages exist
+        if (formattedMessages.length === 0) {
+          formattedMessages.push({
+            id: "welcome",
+            role: "ai",
+            text: "Hello! I'm your AI Professor. I'm here to help you understand this lesson better. Feel free to ask me any questions!",
+            timestamp: new Date()
+          });
+        }
+        
+        setMessages(formattedMessages);
+      }
+    } catch (error) {
+      console.error('Error loading chat history:', error);
+      // Set default welcome message on error
+      setMessages([{
+        id: "welcome",
+        role: "ai",
+        text: "Hello! I'm your AI Professor. I'm here to help you understand this lesson better. Feel free to ask me any questions!",
+        timestamp: new Date()
+      }]);
+    }
+  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -97,7 +154,7 @@ export default function ChatBox({ lessonId }: { lessonId: string }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim() || isLoading) return
+    if (!input.trim() || displayIsLoading) return
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -106,6 +163,14 @@ export default function ChatBox({ lessonId }: { lessonId: string }) {
       timestamp: new Date()
     }
 
+    // If using external message handling, call the external handler
+    if (onSendMessage) {
+      setInput("")
+      await onSendMessage(input.trim())
+      return
+    }
+
+    // Otherwise, handle internally
     setMessages(prev => [...prev, userMessage])
     const currentInput = input.trim()
     setInput("")
@@ -120,8 +185,10 @@ export default function ChatBox({ lessonId }: { lessonId: string }) {
         },
         body: JSON.stringify({
           question: currentInput,
-          context: 'lesson_chat',
-          lessonId: lessonId
+          context: lessonId ? 'lesson_chat' : courseId ? 'course_guidance' : 'general_chat',
+          lessonId: lessonId,
+          courseId: courseId,
+          assessmentId: assessmentId
         }),
       })
 

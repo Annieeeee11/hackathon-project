@@ -1,112 +1,100 @@
-import { NextResponse } from "next/server";
-import { answerDoubt } from "@/lib/openaiClient";
-import { dbHelpers, supabase } from "@/lib/supabaseClient";
-import OpenAI from "openai";
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabaseClient';
 
-export async function POST(req: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const { question, lessonId, courseId, userId } = await req.json();
-
-    if (!question) {
-      return NextResponse.json({ error: "Question is required" }, { status: 400 });
-    }
-
-    try {
-      // Get lesson content for context from database
-      let lessonContent = "General programming concepts.";
-      
-      if (lessonId && lessonId !== 'general') {
-        try {
-          const { data: lessonData, error: lessonError } = await supabase
-            .from('lessons')
-            .select('title, content, objectives')
-            .eq('id', lessonId)
-            .single();
-
-          if (!lessonError && lessonData) {
-            lessonContent = `Lesson: ${lessonData.title}\nContent: ${lessonData.content}\nObjectives: ${lessonData.objectives?.join(', ') || 'N/A'}`;
-          }
-        } catch (dbError) {
-          console.error("Error fetching lesson:", dbError);
-        }
-      }
-      
-      // Generate AI response using OpenAI
-      const answer = await generateAIAnswer(question, lessonId, lessonContent);
-
-      // Save chat interaction to database if user is authenticated
-      if (userId && userId !== 'demo-user') {
-        try {
-          await dbHelpers.saveChatInteraction(
-            userId,
-            courseId || 'general',
-            lessonId || 'general',
-            question,
-            answer
-          );
-        } catch (dbError) {
-          console.error("Error saving chat interaction:", dbError);
-          // Continue even if saving fails
-        }
-      }
-
-      return NextResponse.json({ success: true, answer });
-    } catch (openaiError) {
-      console.error("OpenAI error:", openaiError);
-      // Fallback response if OpenAI fails
-      const fallbackAnswer = `I'm having trouble processing your question right now. Please try rephrasing it or ask about a specific programming concept.`;
-      return NextResponse.json({ success: true, answer: fallbackAnswer });
-    }
-  } catch (error) {
-    console.error("Error in chat:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
-  }
-}
-async function generateAIAnswer(question: string, lessonId?: string, context?: string) {
-  try {
-    const systemPrompt = `You are an expert AI Professor and educational assistant. You help students learn by providing clear, detailed, and engaging explanations. 
-
-Your teaching style:
-- Break down complex concepts into simple, understandable parts
-- Use examples and analogies when helpful
-- Encourage further learning and exploration
-- Be patient and supportive
-- Provide practical, actionable advice
-
-${lessonId ? `You are currently helping with lesson: ${lessonId}` : ''}
-${context ? `Additional context: ${context}` : ''}`;
-
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    const supabase = createClient();
     
-    const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt
-        },
-        {
-          role: "user",
-          content: question
-        }
-      ],
-      temperature: 0.7,
-      max_tokens: 1000,
-    });
-
-    const aiResponse = completion.choices[0]?.message?.content;
-    if (!aiResponse) {
-      throw new Error("No response from OpenAI");
+    // Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    return aiResponse;
+    const { searchParams } = new URL(request.url);
+    const courseId = searchParams.get('courseId');
+    const lessonId = searchParams.get('lessonId');
+    const assessmentId = searchParams.get('assessmentId');
+
+    // Build query
+    let query = supabase
+      .from('chat_history')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (courseId) {
+      query = query.eq('course_id', courseId);
+    }
+    if (lessonId) {
+      query = query.eq('lesson_id', lessonId);
+    }
+    if (assessmentId) {
+      query = query.eq('assessment_id', assessmentId);
+    }
+
+    const { data: chatHistory, error: chatError } = await query;
+
+    if (chatError) {
+      console.error('Error fetching chat history:', chatError);
+      return NextResponse.json({ error: 'Failed to fetch chat history' }, { status: 500 });
+    }
+
+    return NextResponse.json({ messages: chatHistory || [] });
   } catch (error) {
-    console.error("Error generating AI answer:", error);
-    
-    // Fallback response if AI fails
-    return `I understand you're asking about "${question}". While I'm having trouble accessing my full knowledge base right now, I'd be happy to help you learn more about this topic. Could you provide a bit more context about what specific aspect you'd like to understand better?`;
+    console.error('Error in chat API:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = createClient();
+    
+    // Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { 
+      question, 
+      answer, 
+      courseId, 
+      lessonId, 
+      assessmentId, 
+      context = 'general_chat',
+      messageType = 'text' 
+    } = body;
+
+    // Save chat interaction
+    const { data: chatEntry, error: chatError } = await supabase
+      .from('chat_history')
+      .insert({
+        user_id: user.id,
+        course_id: courseId || null,
+        lesson_id: lessonId || null,
+        assessment_id: assessmentId || null,
+        context,
+        question,
+        answer,
+        message_type: messageType
+      })
+      .select()
+      .single();
+
+    if (chatError) {
+      console.error('Error saving chat history:', chatError);
+      return NextResponse.json({ error: 'Failed to save chat history' }, { status: 500 });
+    }
+
+    return NextResponse.json({ message: chatEntry });
+  } catch (error) {
+    console.error('Error in chat POST API:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

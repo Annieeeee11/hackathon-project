@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/modeToggle";
 import { 
@@ -13,11 +13,11 @@ import {
   IconCheck,
   IconX,
   IconCode,
-  IconArrowRight
+  IconArrowRight,
+  IconLoader
 } from "@tabler/icons-react";
 import Link from "next/link";
 import AppLayout from "@/components/layout/AppLayout";
-
 
 interface Assessment {
   id: string;
@@ -25,54 +25,49 @@ interface Assessment {
   description: string;
   difficulty: "Beginner" | "Intermediate" | "Advanced";
   timeLimit: number;
-  status: "not-started" | "in-progress" | "completed";
+  instructions: string;
+  starter_code?: string;
+  test_cases: any[];
+  expected_output?: string;
+  course_id?: string;
+  lesson_id?: string;
+  status: "not-started" | "in-progress" | "completed" | "abandoned";
   score?: number;
-  completedAt?: string;
+  submitted_code?: string;
+  execution_result?: any;
+  time_spent?: number;
+  started_at?: string;
+  completed_at?: string;
+  created_at: string;
 }
 
-const mockAssessments: Assessment[] = [
-  {
-    id: "1",
-    title: "React Component Challenge",
-    description: "Create a reusable React component with search functionality",
-    difficulty: "Intermediate",
-    timeLimit: 30,
-    status: "completed",
-    score: 85,
-    completedAt: "2 days ago"
-  },
-  {
-    id: "2",
-    title: "JavaScript Fundamentals Quiz",
-    description: "Test your knowledge of JavaScript basics and ES6 features",
-    difficulty: "Beginner",
-    timeLimit: 20,
-    status: "completed",
-    score: 92,
-    completedAt: "1 week ago"
-  },
-  {
-    id: "3",
-    title: "Data Structures Implementation",
-    description: "Implement common data structures like linked lists and trees",
-    difficulty: "Advanced",
-    timeLimit: 45,
-    status: "in-progress"
-  },
-  {
-    id: "4",
-    title: "CSS Layout Mastery",
-    description: "Create responsive layouts using Flexbox and Grid",
-    difficulty: "Intermediate",
-    timeLimit: 25,
-    status: "not-started"
-  }
-];
-
 export default function AssessmentsPage() {
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState("all");
 
-  const filteredAssessments = mockAssessments.filter(assessment => {
+  useEffect(() => {
+    const fetchAssessments = async () => {
+      try {
+        const response = await fetch('/api/assessments');
+        if (!response.ok) {
+          throw new Error('Failed to fetch assessments');
+        }
+        const data = await response.json();
+        setAssessments(data.assessments || []);
+      } catch (err) {
+        console.error('Error fetching assessments:', err);
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAssessments();
+  }, []);
+
+  const filteredAssessments = assessments.filter(assessment => {
     if (filterStatus === "all") return true;
     return assessment.status === filterStatus;
   });
@@ -112,10 +107,37 @@ export default function AssessmentsPage() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <IconLoader className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">Loading assessments...</p>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-red-500 mb-4">Error: {error}</p>
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
-    <AppLayout 
-    >
-    <div className="min-h-screen bg-background">
+    <AppLayout>
+      <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="flex justify-between items-center p-6 border-b">
         <div className="flex items-center gap-2">
@@ -205,9 +227,9 @@ export default function AssessmentsPage() {
                   )}
 
                   {/* Completed Date */}
-                  {assessment.status === "completed" && assessment.completedAt && (
+                  {assessment.status === "completed" && assessment.completed_at && (
                     <div className="text-xs text-gray-500 dark:text-gray-500">
-                      Completed {assessment.completedAt}
+                      Completed {assessment.completed_at}
                     </div>
                   )}
 

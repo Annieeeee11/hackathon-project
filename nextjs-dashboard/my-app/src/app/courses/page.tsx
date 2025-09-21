@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/modeToggle";
 import CourseCard from "@/components/dashboard/CourseCard";
@@ -12,222 +12,244 @@ import {
   IconBook,
   IconMessageCircle,
   IconArrowRight,
-  IconRocket
+  IconRocket,
+  IconLoader
 } from "@tabler/icons-react";
 import Link from "next/link";
 import AppLayout from "@/components/layout/AppLayout";
 
-
-const mockCourses = [
-  { 
-    id: 1, 
-    title: "React.js Fundamentals", 
-    description: "Master the basics of React including components, props, state, and hooks",
-    duration: "4 weeks",
-    lessons: [
-      { id: 1, title: "Introduction to React", completed: true },
-      { id: 2, title: "Components and JSX", completed: true },
-      { id: 3, title: "Props and State", completed: true },
-      { id: 4, title: "Event Handling", completed: true },
-      { id: 5, title: "Lifecycle Methods", completed: true },
-      { id: 6, title: "Hooks", completed: true },
-      { id: 7, title: "Context API", completed: true },
-      { id: 8, title: "Routing", completed: false },
-      { id: 9, title: "State Management", completed: false },
-      { id: 10, title: "Testing", completed: false },
-    ],
-    tags: ["react", "javascript", "frontend"],
-    created_at: "2024-01-15"
-  },
-  { 
-    id: 2, 
-    title: "Data Structures & Algorithms", 
-    description: "Learn fundamental data structures and algorithms for efficient programming",
-    duration: "6 weeks",
-    lessons: [
-      { id: 1, title: "Arrays and Lists", completed: true },
-      { id: 2, title: "Stacks and Queues", completed: true },
-      { id: 3, title: "Linked Lists", completed: true },
-      { id: 4, title: "Trees", completed: true },
-      { id: 5, title: "Graphs", completed: false },
-      { id: 6, title: "Sorting Algorithms", completed: false },
-      { id: 7, title: "Searching Algorithms", completed: false },
-      { id: 8, title: "Dynamic Programming", completed: false },
-      { id: 9, title: "Greedy Algorithms", completed: false },
-      { id: 10, title: "Complexity Analysis", completed: false },
-      { id: 11, title: "Hash Tables", completed: false },
-      { id: 12, title: "Advanced Topics", completed: false },
-    ],
-    tags: ["algorithms", "data-structures", "programming"],
-    created_at: "2024-01-10"
-  },
-  { 
-    id: 3, 
-    title: "Machine Learning Basics", 
-    description: "Introduction to machine learning concepts and practical applications",
-    duration: "3 weeks",
-    lessons: [
-      { id: 1, title: "Introduction to ML", completed: true },
-      { id: 2, title: "Data Preprocessing", completed: true },
-      { id: 3, title: "Linear Regression", completed: true },
-      { id: 4, title: "Logistic Regression", completed: true },
-      { id: 5, title: "Decision Trees", completed: true },
-      { id: 6, title: "Random Forest", completed: true },
-      { id: 7, title: "Clustering", completed: true },
-      { id: 8, title: "Neural Networks", completed: true },
-      { id: 9, title: "Model Evaluation", completed: true },
-      { id: 10, title: "Deployment", completed: false },
-    ],
-    tags: ["machine-learning", "python", "ai"],
-    created_at: "2024-01-05"
-  },
-  { 
-    id: 4, 
-    title: "JavaScript Mastery", 
-    description: "Advanced JavaScript concepts and modern development practices",
-    duration: "5 weeks",
-    lessons: [
-      { id: 1, title: "ES6+ Features", completed: true },
-      { id: 2, title: "Async/Await", completed: true },
-      { id: 3, title: "Promises", completed: true },
-      { id: 4, title: "Closures", completed: true },
-      { id: 5, title: "Prototypes", completed: true },
-      { id: 6, title: "Modules", completed: true },
-      { id: 7, title: "Generators", completed: true },
-      { id: 8, title: "Proxy", completed: true },
-      { id: 9, title: "Symbols", completed: true },
-      { id: 10, title: "Iterators", completed: true },
-      { id: 11, title: "Maps and Sets", completed: true },
-      { id: 12, title: "Performance", completed: true },
-      { id: 13, title: "Testing", completed: true },
-      { id: 14, title: "Build Tools", completed: true },
-      { id: 15, title: "Deployment", completed: true },
-    ],
-    tags: ["javascript", "es6", "advanced"],
-    created_at: "2024-01-01"
-  },
-];
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+  duration: string;
+  difficulty: string;
+  tags: string[];
+  lessons: Array<{ id: string; title: string; completed: boolean }>;
+  progress: number;
+  status: string;
+  enrollment_date: string;
+  created_at: string;
+}
 
 export default function CoursesPage() {
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDifficulty, setFilterDifficulty] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
 
-  const filteredCourses = mockCourses.filter(course => {
-    const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase());
-    // Since we removed difficulty from the new structure, we'll filter by tags instead
-    const matchesDifficulty = filterDifficulty === "all" || 
-      course.tags.some(tag => tag.toLowerCase().includes(filterDifficulty.toLowerCase()));
-    return matchesSearch && matchesDifficulty;
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const response = await fetch('/api/courses');
+        if (!response.ok) {
+          throw new Error('Failed to fetch courses');
+        }
+        const data = await response.json();
+        setCourses(data.courses || []);
+      } catch (err) {
+        console.error('Error fetching courses:', err);
+        setError(err instanceof Error ? err.message : 'An error occurred');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCourses();
+  }, []);
+
+  // Filter courses based on search and filters
+  const filteredCourses = courses.filter(course => {
+    const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         course.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         course.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesDifficulty = filterDifficulty === "all" || course.difficulty === filterDifficulty;
+    const matchesStatus = filterStatus === "all" || course.status === filterStatus;
+    
+    return matchesSearch && matchesDifficulty && matchesStatus;
   });
+
+  if (isLoading) {
+    return (
+      <AppLayout 
+        title="My Courses" 
+        subtitle="Continue your learning journey"
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <IconLoader className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">Loading courses...</p>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AppLayout 
+        title="My Courses" 
+        subtitle="Continue your learning journey"
+      >
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-red-500 mb-4">Error: {error}</p>
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout 
+      title="My Courses" 
+      subtitle="Continue your learning journey"
     >
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="flex justify-between items-center p-6 border-b">
-        <div className="flex items-center gap-2">
-          <IconBrain className="w-8 h-8 text-primary" />
-          <h1 className="text-2xl font-bold text-foreground">AI Learning Assistant</h1>
-        </div>
-        <div className="flex items-center gap-4">
-          <ModeToggle />
-          <Link href="/chat">
-            <Button variant="outline">
-              <IconMessageCircle className="w-4 h-4 mr-2" />
-              AI Chat
-            </Button>
-          </Link>
-        </div>
-      </header>
-
-      {/* Hero Section */}
-      <section className="py-12 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center">
-                <IconBook className="w-8 h-8 text-primary-foreground" />
+      {courses.length > 0 && (
+          <div className="bg-white dark:bg-white rounded-lg border border-gray-200 mb-20 dark:border-gray-300 p-6">
+            <h3 className="text-lg font-semibold text-black dark:text-black mb-4">Learning Summary</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-black dark:text-black">{courses.length}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-600">Total Courses</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-black dark:text-black">
+                  {courses.filter(c => c.status === 'completed').length}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-600">Completed</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-black dark:text-black">
+                  {courses.filter(c => c.status === 'active').length}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-600">In Progress</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-black dark:text-black">
+                  {Math.round(courses.reduce((acc, course) => acc + course.progress, 0) / courses.length) || 0}%
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-600">Avg Progress</p>
               </div>
             </div>
-            <h1 className="text-4xl font-bold text-foreground mb-4">
-              My
-              <span className="text-primary"> Courses</span>
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Manage and track your learning progress across all your personalized AI-generated courses.
-            </p>
           </div>
+        )}
 
-          {/* Action Buttons */}
-          <div className="flex justify-center mb-8">
-            <Link href="/generate-course">
-              <Button size="lg">
-                <IconBrain className="w-4 h-4 mr-2" />
+      <div className="space-y-6">
+        {/* Header Actions */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+          <div className="flex items-center gap-4">
+            <Button asChild>
+              <Link href="/generate-course">
+                <IconPlus className="w-4 h-4 mr-2" />
                 Generate New Course
-                <IconArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/chat">
+                <IconMessageCircle className="w-4 h-4 mr-2" />
+                Ask AI Professor
+              </Link>
+            </Button>
           </div>
+          <ModeToggle />
+        </div>
 
-          {/* Search and Filter */}
-          <div className="flex gap-4 items-center mb-8 max-w-2xl mx-auto">
-            <div className="flex-1 relative">
-              <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search courses..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <IconFilter className="w-4 h-4 text-muted-foreground" />
-              <select
-                value={filterDifficulty}
-                onChange={(e) => setFilterDifficulty(e.target.value)}
-                className="px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="all">All Levels</option>
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
-              </select>
-            </div>
+        {/* Search and Filters */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Search courses..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-300 rounded-lg bg-white dark:bg-white text-black dark:text-black placeholder-gray-500 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary"
+            />
           </div>
+          
+          <select
+            value={filterDifficulty}
+            onChange={(e) => setFilterDifficulty(e.target.value)}
+            className="px-4 py-2 border border-gray-200 dark:border-gray-300 rounded-lg bg-white dark:bg-white text-black dark:text-black focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="all">All Difficulties</option>
+            <option value="Beginner">Beginner</option>
+            <option value="Intermediate">Intermediate</option>
+            <option value="Advanced">Advanced</option>
+          </select>
+          
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="px-4 py-2 border border-gray-200 dark:border-gray-300 rounded-lg bg-white dark:bg-white text-black dark:text-black focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+            <option value="paused">Paused</option>
+          </select>
+        </div>
 
-          {/* Courses Grid */}
+        {/* Courses Grid */}
+        {filteredCourses.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCourses.map((course) => (
-              <CourseCard key={course.id} course={course} />
+              <CourseCard
+                key={course.id}
+                course={{
+                  id: course.id,
+                  title: course.title,
+                  description: course.description,
+                  duration: course.duration,
+                  tags: course.tags,
+                  lessons: course.lessons,
+                  created_at: course.created_at
+                }}
+                progress={course.progress}
+              />
             ))}
           </div>
-
-          {filteredCourses.length === 0 && (
-            <div className="text-center py-16">
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                <IconBook className="w-10 h-10 text-primary" />
-              </div>
-              <h3 className="text-2xl font-bold text-foreground mb-4">No courses found</h3>
-              <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                {searchTerm || filterDifficulty !== "all" 
-                  ? "Try adjusting your search or filter criteria to find what you're looking for."
-                  : "Start your learning journey by generating your first personalized course with AI."
-                }
-              </p>
-              <Link href="/generate-course">
-                <Button size="lg">
-                  <IconBrain className="w-4 h-4 mr-2" />
-                  Generate Your First Course
-                  <IconArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
+        ) : (
+          <div className="text-center py-12">
+            <div className="w-24 h-24 bg-gray-100 dark:bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-6">
+              <IconBook className="w-12 h-12 text-gray-400" />
             </div>
-          )}
-        </div>
-      </section>
-    </div>
+            <h3 className="text-xl font-semibold text-black dark:text-black mb-2">
+              {searchTerm || filterDifficulty !== "all" || filterStatus !== "all" 
+                ? "No courses found" 
+                : "No courses enrolled yet"}
+            </h3>
+            <p className="text-gray-600 dark:text-gray-600 mb-6 max-w-md mx-auto">
+              {searchTerm || filterDifficulty !== "all" || filterStatus !== "all"
+                ? "Try adjusting your search or filter criteria to find courses."
+                : "Start your learning journey by generating a new course or browsing available courses."}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button asChild>
+                <Link href="/generate-course">
+                  <IconRocket className="w-4 h-4 mr-2" />
+                  Generate Course
+                </Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/chat">
+                  <IconMessageCircle className="w-4 h-4 mr-2" />
+                  Ask AI Professor
+                </Link>
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Stats Summary */}
+      </div>
     </AppLayout>
   );
 }

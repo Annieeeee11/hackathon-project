@@ -29,31 +29,47 @@ export async function POST(request: NextRequest) {
     const totalLessons = courseData.lessons?.length || 0
     const estimatedHours = totalLessons * 0.5 // Assume 30 min per lesson
 
-    // For now, just return the course data without saving to database
-    // This will help us debug the AI generation first
-    return NextResponse.json({
-      success: true,
-      course: courseData
-    })
+    // Save the course to the database
+    const { data: savedCourse, error: courseError } = await supabase
+      .from('courses')
+      .insert({
+        title: courseData.title,
+        description: courseData.description,
+        duration: courseData.estimatedDuration,
+        difficulty_level: courseData.difficulty,
+        tags: courseData.tags,
+        estimated_hours: estimatedHours,
+        created_by: userId || null, // Allow null if no user exists
+        is_published: true // Publish the generated course
+      })
+      .select()
+      .single();
 
-    // Create course enrollment for the user
-    try {
-      await dbHelpers.enrollInCourse(userId, courseData.id)
-    } catch (enrollError) {
-      console.error('Enrollment error:', enrollError)
-      // Continue even if enrollment fails
+    if (courseError) {
+      console.error('Course creation error:', courseError);
+      return NextResponse.json({ error: 'Failed to save course to database' }, { status: 500 });
+    }
+
+    // Create course enrollment for the user (only if userId exists)
+    if (userId) {
+      try {
+        await dbHelpers.enrollInCourse(userId, savedCourse.id)
+      } catch (enrollError) {
+        console.error('Enrollment error:', enrollError)
+        // Continue even if enrollment fails
+      }
     }
 
     // Create lessons in the database
     if (courseData.lessons && courseData.lessons.length > 0) {
       const lessonInserts = courseData.lessons.map((lesson: any, index: number) => ({
-        course_id: courseData.id,
+        course_id: savedCourse.id,
         title: lesson.title,
         content: lesson.content || '',
-        lesson_type: 'theory',
-        order_number: index + 1,
-        duration_minutes: 30,
-        objectives: lesson.objectives || [],
+        explanation: lesson.content || '',
+        duration: lesson.duration || '30 min',
+        difficulty: lesson.difficulty || courseData.difficulty,
+        order_index: index + 1,
         is_published: true
       }))
 
@@ -69,7 +85,7 @@ export async function POST(request: NextRequest) {
 
     // Log learning analytics
     try {
-      await dbHelpers.logLearningSession(userId, courseData.id, {
+      await dbHelpers.logLearningSession(userId, savedCourse.id, {
         session_duration: 5, // Course generation time
         lessons_completed: 0
       })
@@ -81,7 +97,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       course: {
-        ...courseData,
+        ...savedCourse,
         lessons: courseData.lessons
       }
     })

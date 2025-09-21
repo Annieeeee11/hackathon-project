@@ -46,41 +46,32 @@ export default function LessonPage({ params }: LessonPageProps) {
   const [avatarEmotion, setAvatarEmotion] = useState<'neutral' | 'happy' | 'thinking' | 'explaining'>('neutral');
   const [currentAvatarMessage, setCurrentAvatarMessage] = useState("");
 
-  // Mock lesson data
+  // Fetch lesson data
   useEffect(() => {
-    const mockLesson: Lesson = {
-      id: id,
-      title: "React Hooks Fundamentals",
-      content: "Learn about React Hooks and how to use them effectively in your applications. This lesson covers useState, useEffect, and custom hooks.",
-      duration: "45 min",
-      difficulty: "Intermediate",
-      codeExample: `import React, { useState, useEffect } from 'react';
-
-function Counter() {
-  const [count, setCount] = useState(0);
-  
-  useEffect(() => {
-    document.title = \`Count: \${count}\`;
-  }, [count]);
-  
-  return (
-    <div>
-      <p>Count: {count}</p>
-      <button onClick={() => setCount(count + 1)}>
-        Increment
-      </button>
-    </div>
-  );
-}`,
-      explanation: "React Hooks allow you to use state and other React features in functional components. The useState hook manages component state, while useEffect handles side effects like API calls or DOM updates.",
-      keyPoints: [
-        "Hooks can only be called at the top level of React functions",
-        "useState returns a state value and a setter function",
-        "useEffect runs after every render by default",
-        "Custom hooks allow you to extract component logic into reusable functions"
-      ]
+    const fetchLesson = async () => {
+      try {
+        const response = await fetch(`/api/lessons/${id}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch lesson');
+        }
+        const data = await response.json();
+        setLesson(data.lesson);
+      } catch (err) {
+        console.error('Error fetching lesson:', err);
+        // Set a fallback lesson if fetch fails
+        setLesson({
+          id: id,
+          title: "Lesson Not Found",
+          content: "This lesson could not be loaded. Please try again later.",
+          duration: "0 min",
+          difficulty: "Beginner",
+          explanation: "The lesson content is currently unavailable.",
+          keyPoints: []
+        });
+      }
     };
-    setLesson(mockLesson);
+
+    fetchLesson();
   }, [id]);
 
   const handlePlayPause = () => {
@@ -114,11 +105,32 @@ function Counter() {
     setIsMuted(!isMuted);
   };
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
     } else {
       setIsCompleted(true);
+      // Mark lesson as completed
+      await updateLessonProgress(true);
+    }
+  };
+
+  const updateLessonProgress = async (completed: boolean) => {
+    try {
+      await fetch(`/api/lessons/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          completed,
+          time_spent: Date.now() - (lesson?.created_at ? new Date(lesson.created_at).getTime() : Date.now()),
+          last_position: currentStep,
+          course_id: lesson?.course_id
+        }),
+      });
+    } catch (err) {
+      console.error('Error updating lesson progress:', err);
     }
   };
 
@@ -332,7 +344,10 @@ function Counter() {
             {/* Chat Panel */}
             {showChat && (
               <div className="w-80 border-l bg-card">
-                <ChatBox lessonId={lesson.id} />
+                <ChatBox 
+                  lessonId={lesson.id} 
+                  courseId={lesson.course_id}
+                />
               </div>
             )}
           </div>
