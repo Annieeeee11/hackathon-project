@@ -12,7 +12,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 })
 
 // Service role client for admin operations
-export const supabaseAdmin = supabaseServiceKey 
+export const supabaseAdmin = typeof window === 'undefined' && supabaseServiceKey 
   ? createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
@@ -75,23 +75,25 @@ interface LearningAnalytics {
   created_at: string;
 }
 
-// Client-side Supabase client (uses anon key)
-export const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+// Client-side Supabase client (uses anon key) - alternative export
+export const supabaseClient = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-// Server-side Supabase client (uses service role key for admin operations)
-export const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  }
-);
+// Server-side Supabase client (uses service role key for admin operations) - alternative export
+export const supabaseAdminClient = typeof window === 'undefined' && process.env.SUPABASE_SERVICE_ROLE_KEY
+  ? createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    )
+  : null;
 
 // MCP-specific client configuration (if needed for MCP operations)
 export const supabaseMCP = {

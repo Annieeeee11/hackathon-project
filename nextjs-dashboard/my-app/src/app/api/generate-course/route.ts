@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
-import { openai } from "@/lib/openaiClient";
+import { NextRequest, NextResponse } from "next/server";
+import getOpenAI from "@/lib/openaiClient";
 import { supabase } from "@/lib/supabaseClient";
 
 export async function POST(request: NextRequest) {
@@ -55,6 +55,7 @@ Return the response in the following JSON format:
 }`;
 
   try {
+    const openai = getOpenAI();
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [

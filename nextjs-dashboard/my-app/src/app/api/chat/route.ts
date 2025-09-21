@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { openai } from "@/lib/openaiClient";
+import getOpenAI from "@/lib/openaiClient";
 
 export async function POST(req: Request) {
   try {
@@ -10,8 +10,8 @@ export async function POST(req: Request) {
     }
 
     // Generate AI answer using OpenAI
-    const answer = await generateAIAnswer(question, lessonId, context);
-
+    try {
+      const answer = await generateAIAnswer(question, lessonId, context);
       return NextResponse.json({ success: true, answer });
     } catch (openaiError) {
       console.error("OpenAI error:", openaiError);
@@ -39,6 +39,7 @@ Your teaching style:
 ${lessonId ? `You are currently helping with lesson: ${lessonId}` : ''}
 ${context ? `Additional context: ${context}` : ''}`;
 
+    const openai = getOpenAI();
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [

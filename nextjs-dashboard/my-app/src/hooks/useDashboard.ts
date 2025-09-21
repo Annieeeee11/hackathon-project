@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase, dbHelpers } from '../lib/supabaseClient'
+import { supabase } from '../lib/supabaseClient'
 import { User } from '@supabase/supabase-js'
 
 // Type definitions
@@ -109,10 +109,18 @@ export function useDashboard() {
 
       if (profileError && profileError.code === 'PGRST116') {
         // Profile doesn't exist, create it
-        profileData = await dbHelpers.createProfile(user.id, {
-          email: user.email,
-          full_name: user.user_metadata?.full_name || 'Student'
-        })
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            email: user.email,
+            full_name: user.user_metadata?.full_name || 'Student'
+          })
+          .select()
+          .single()
+        
+        if (createError) throw createError
+        profileData = newProfile
       } else if (profileError) {
         throw profileError
       }
@@ -147,12 +155,23 @@ export function useDashboard() {
 
   const fetchUserCourses = async (userId: string): Promise<Course[]> => {
     try {
-      const courses = await dbHelpers.getUserCourses(userId)
-      return courses.map((course: any) => ({
+      const { data: courses, error } = await supabase
+        .from('courses')
+        .select(`
+          *,
+          course_enrollments!inner(progress_percentage),
+          lessons(*)
+        `)
+        .eq('course_enrollments.user_id', userId)
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      return courses?.map((course: any) => ({
         ...course,
         lessons: course.lessons || [],
         progress: course.course_enrollments?.[0]?.progress_percentage || 0
-      }))
+      })) || []
     } catch (error) {
       console.error('Error fetching courses:', error)
       return []
@@ -376,13 +395,15 @@ export function useDashboard() {
       
       // Save to chat history if user is authenticated
       if (user?.id && user.id !== 'demo-user') {
-        await dbHelpers.saveChatInteraction(
-          user.id,
-          String(dashboardData.courses[0]?.id || 'general'),
-          'dashboard',
-          message,
-          data.answer
-        )
+        await supabase
+          .from('chat_history')
+          .insert({
+            user_id: user.id,
+            course_id: String(dashboardData.courses[0]?.id || 'general'),
+            lesson_id: 'dashboard',
+            question: message,
+            answer: data.answer
+          })
         
         // Refresh conversations
         const updatedConversations = await fetchRecentConversations(user.id)
