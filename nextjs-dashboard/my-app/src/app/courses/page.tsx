@@ -1,27 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar";
-import { ModeToggle } from "@/components/modeToggle";
+import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import CourseCard from "@/components/dashboard/CourseCard";
 import { 
-  IconBook, 
-  IconBrain, 
-  IconDashboard, 
-  IconMessageCircle, 
   IconPlus,
   IconSearch,
-  IconFilter
+  IconFilter,
+  IconBrain,
+  IconBook
 } from "@tabler/icons-react";
 
-const sidebarLinks = [
-  { label: "Dashboard", href: "/dashboard", icon: <IconDashboard className="w-5 h-5" /> },
-  { label: "Generate Course", href: "/gen-course", icon: <IconBrain className="w-5 h-5" /> },
-  { label: "My Courses", href: "/courses", icon: <IconBook className="w-5 h-5" /> },
-  { label: "Assessments", href: "/assessments", icon: <IconBook className="w-5 h-5" /> },
-  { label: "Chat with AI", href: "/chat", icon: <IconMessageCircle className="w-5 h-5" /> },
-];
 
 const mockCourses = [
   { 
@@ -126,57 +116,44 @@ export default function CoursesPage() {
   });
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar>
-        <SidebarBody className="flex flex-col gap-2 p-4">
-          {sidebarLinks.map((link) => (
-            <SidebarLink key={link.href} link={link} />
-          ))}
-        </SidebarBody>
-      </Sidebar>
+    <AppLayout 
+      title="My Courses" 
+      subtitle="Manage and track your learning progress"
+    >
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2">
+          <Button>
+            <IconPlus className="w-4 h-4 mr-2" />
+            Generate New Course
+          </Button>
+        </div>
 
-      <main className="flex-1 overflow-y-auto">
-        <header className="flex justify-between items-center p-6 border-b">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">My Courses</h1>
-            <p className="text-muted-foreground mt-1">Manage and track your learning progress</p>
+        {/* Search and Filter */}
+        <div className="flex gap-4 items-center">
+          <div className="flex-1 relative">
+            <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search courses..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            />
           </div>
           <div className="flex items-center gap-2">
-            <Button>
-              <IconPlus className="w-4 h-4 mr-2" />
-              Generate New Course
-            </Button>
-            <ModeToggle />
+            <IconFilter className="w-4 h-4 text-muted-foreground" />
+            <select
+              value={filterDifficulty}
+              onChange={(e) => setFilterDifficulty(e.target.value)}
+              className="px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="all">All Levels</option>
+              <option value="beginner">Beginner</option>
+              <option value="intermediate">Intermediate</option>
+              <option value="advanced">Advanced</option>
+            </select>
           </div>
-        </header>
-
-        <div className="p-6 space-y-6">
-          {/* Search and Filter */}
-          <div className="flex gap-4 items-center">
-            <div className="flex-1 relative">
-              <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Search courses..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <IconFilter className="w-4 h-4 text-muted-foreground" />
-              <select
-                value={filterDifficulty}
-                onChange={(e) => setFilterDifficulty(e.target.value)}
-                className="px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="all">All Levels</option>
-                <option value="beginner">Beginner</option>
-                <option value="intermediate">Intermediate</option>
-                <option value="advanced">Advanced</option>
-              </select>
-            </div>
-          </div>
+        </div>
 
           {/* Courses Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -201,8 +178,6 @@ export default function CoursesPage() {
               </Button>
             </div>
           )}
-        </div>
-      </main>
-    </div>
+    </AppLayout>
   );
 }

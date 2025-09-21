@@ -3,18 +3,14 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar";
-import { ModeToggle } from "@/components/modeToggle";
+import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
-import { UserMenu } from "@/components/auth/UserMenu";
 import { 
-  IconBook, 
-  IconBrain, 
-  IconDashboard, 
-  IconMessageCircle, 
   IconPlus,
   IconX,
-  IconLoader2
+  IconLoader2,
+  IconDashboard,
+  IconBrain
 } from "@tabler/icons-react";
 
 interface Lesson {
@@ -35,13 +31,6 @@ interface Course {
   difficulty: string;
 }
 
-const sidebarLinks = [
-  { label: "Dashboard", href: "/dashboard", icon: <IconDashboard className="w-5 h-5" /> },
-  { label: "Generate Course", href: "/gen-course", icon: <IconBrain className="w-5 h-5" /> },
-  { label: "My Courses", href: "/courses", icon: <IconBook className="w-5 h-5" /> },
-  { label: "Assessments", href: "/assessments", icon: <IconBook className="w-5 h-5" /> },
-  { label: "Chat with AI", href: "/chat", icon: <IconMessageCircle className="w-5 h-5" /> },
-];
 
 const popularTags = [
   "react.js", "javascript", "python", "machine-learning", "data-structures",
@@ -136,28 +125,11 @@ export default function GenerateCoursePage() {
   };
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar>
-        <SidebarBody className="flex flex-col gap-2 p-4">
-          {sidebarLinks.map((link) => (
-            <SidebarLink key={link.href} link={link} />
-          ))}
-        </SidebarBody>
-      </Sidebar>
-
-      <main className="flex-1 overflow-y-auto">
-        <header className="flex justify-between items-center p-6 border-b">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Generate Course</h1>
-            <p className="text-muted-foreground mt-1">Create personalized courses with AI Professor</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <ModeToggle />
-            <UserMenu />
-          </div>
-        </header>
-
-        <div className="p-6 max-w-4xl mx-auto">
+    <AppLayout 
+      title="Generate Course" 
+      subtitle="Create personalized courses with AI Professor"
+    >
+      <div className="max-w-4xl mx-auto space-y-6">
           {/* Course Generator Section */}
           <div className="bg-card rounded-lg border p-6 mb-6">
             <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
@@ -318,8 +290,7 @@ export default function GenerateCoursePage() {
               </div>
             </div>
           )}
-        </div>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 }

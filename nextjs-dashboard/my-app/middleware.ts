@@ -16,7 +16,7 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/dashboard/:path*',
-    '/gen-course/:path*',
+    '/generate-course/:path*',
     '/courses/:path*',
     '/assessments/:path*',
     '/chat/:path*',

@@ -1,32 +1,23 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
-import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar";
-import { ModeToggle } from "@/components/modeToggle";
+import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import Avatar3D from "@/components/lessons/Avatar3D";
 import ChatBox from "@/components/lessons/ChatBox";
 import { 
-  IconBook, 
-  IconBrain, 
-  IconDashboard,  
-  IconMessageCircle, 
   IconVolume,
   IconVolumeOff,
   IconArrowLeft,
   IconArrowRight,
   IconCheck,
   IconCode,
-  IconBulb
+  IconBulb,
+  IconMessageCircle,
+  IconBook
 } from "@tabler/icons-react";
+import { ModeToggle } from "@/components/modeToggle";
 
-const sidebarLinks = [
-  { label: "Dashboard", href: "/dashboard", icon: <IconDashboard className="w-5 h-5" /> },
-  { label: "Generate Course", href: "/gen-course", icon: <IconBrain className="w-5 h-5" /> },
-  { label: "My Courses", href: "/courses", icon: <IconBook className="w-5 h-5" /> },
-  { label: "Assessments", href: "/assessments", icon: <IconBook className="w-5 h-5" /> },
-  { label: "Chat with AI", href: "/chat", icon: <IconMessageCircle className="w-5 h-5" /> },
-];
 
 interface Lesson {
   id: string;
@@ -191,16 +182,8 @@ function Counter() {
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar>
-        <SidebarBody className="flex flex-col gap-2 p-4">
-          {sidebarLinks.map((link) => (
-            <SidebarLink key={link.href} link={link} />
-          ))}
-        </SidebarBody>
-      </Sidebar>
-
-      <main className="flex-1 flex flex-col overflow-hidden">
+    <AppLayout>
+      <div className="flex-1 flex flex-col overflow-hidden">
         <header className="flex justify-between items-center p-6 border-b">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="sm" onClick={() => window.history.back()}>
@@ -382,7 +365,7 @@ function Counter() {
             </div>
           )}
         </div>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 }
