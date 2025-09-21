@@ -168,11 +168,11 @@ export default function AssessmentsPage() {
           {/* Assessments Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredAssessments.map((assessment) => (
-              <div key={assessment.id} className="bg-card rounded-lg border p-6 hover:shadow-lg transition-shadow">
+              <div key={assessment.id} className="bg-white dark:bg-white rounded-lg border border-gray-200 dark:border-gray-300 p-6 hover:shadow-lg transition-shadow">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-foreground mb-2">{assessment.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-3">{assessment.description}</p>
+                    <h3 className="text-lg font-semibold text-black dark:text-black mb-2">{assessment.title}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-600 mb-3">{assessment.description}</p>
                   </div>
                   <div className="flex items-center gap-1">
                     {getStatusIcon(assessment.status)}
@@ -191,7 +191,7 @@ export default function AssessmentsPage() {
                   </div>
 
                   {/* Time Limit */}
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-600">
                     <IconClock className="w-4 h-4" />
                     <span>{assessment.timeLimit} minutes</span>
                   </div>
@@ -199,14 +199,14 @@ export default function AssessmentsPage() {
                   {/* Score (if completed) */}
                   {assessment.status === "completed" && assessment.score && (
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Score:</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-600">Score:</span>
                       <span className="font-semibold text-green-600">{assessment.score}%</span>
                     </div>
                   )}
 
                   {/* Completed Date */}
                   {assessment.status === "completed" && assessment.completedAt && (
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-gray-500 dark:text-gray-500">
                       Completed {assessment.completedAt}
                     </div>
                   )}
