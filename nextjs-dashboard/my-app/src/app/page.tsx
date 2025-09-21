@@ -59,19 +59,19 @@ export default function LandingPage() {
 
   const testimonials = [
     {
-      name: "Sarah Johnson",
+      name: "Exmp",
       role: "Software Engineer",
       content: "The AI tutor helped me learn React in just 2 weeks. The personalized approach made all the difference!",
       rating: 5
     },
     {
-      name: "Mike Chen",
+      name: "Exmp",
       role: "Data Scientist",
       content: "Best learning platform I've used. The coding assessments are challenging but fair, and the feedback is incredibly helpful.",
       rating: 5
     },
     {
-      name: "Emily Rodriguez",
+      name: "Exmp",
       role: "Frontend Developer",
       content: "The community aspect is amazing. I've made great connections and learned so much from other learners.",
       rating: 5

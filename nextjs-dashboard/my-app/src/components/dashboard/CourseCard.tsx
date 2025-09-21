@@ -48,22 +48,22 @@ export default function CourseCard({ course, progress = 0 }: CourseCardProps) {
 
   const getTagColor = (tag: string) => {
     const colors = [
-      'bg-blue-100 text-blue-800',
-      'bg-green-100 text-green-800',
-      'bg-purple-100 text-purple-800',
-      'bg-orange-100 text-orange-800',
-      'bg-pink-100 text-pink-800',
-      'bg-indigo-100 text-indigo-800'
+      'bg-gray-100 text-gray-800',
+      'bg-gray-200 text-gray-900',
+      'bg-black text-white',
+      'bg-gray-300 text-gray-900',
+      'bg-gray-100 text-black',
+      'bg-gray-200 text-gray-800'
     ]
     return colors[tag.length % colors.length]
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden border border-gray-200">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4">
+      <div className="bg-white text-black p-4 border-b border-gray-200">
         <h3 className="text-lg font-semibold mb-2 line-clamp-2">{title}</h3>
-        <div className="flex items-center justify-between text-sm opacity-90">
+        <div className="flex items-center justify-between text-sm text-gray-600">
           <span>🕐 {duration}</span>
           <span>📚 {totalLessons} lessons</span>
         </div>
@@ -100,7 +100,7 @@ export default function CourseCard({ course, progress = 0 }: CourseCardProps) {
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className="bg-gradient-to-r from-green-400 to-blue-500 h-2 rounded-full transition-all duration-500"
+              className="bg-black h-2 rounded-full transition-all duration-500"
               style={{ width: `${progressPercentage}%` }}
             ></div>
           </div>
@@ -113,19 +113,10 @@ export default function CourseCard({ course, progress = 0 }: CourseCardProps) {
         <div className="flex space-x-2">
           <Link
             href={`/course/${id}`}
-            className="flex-1 bg-blue-500 text-white text-center py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+            className="flex-1 bg-black text-white text-center py-2 px-4 rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
           >
             {progressPercentage === 0 ? 'Start Learning' : 'Continue'}
           </Link>
-          
-          {progressPercentage > 0 && (
-            <Link
-              href={`/course/${id}/dashboard`}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-            >
-              📊
-            </Link>
-          )}
         </div>
       </div>
 

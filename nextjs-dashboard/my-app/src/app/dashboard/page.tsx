@@ -4,7 +4,6 @@ import { useState } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import CourseCard from "@/components/dashboard/CourseCard";
-import ProgressChart from "@/components/dashboard/ProgressChart";
 import ActivityFeed from "@/components/dashboard/ActivityFeed";
 import {
   IconTrendingUp,
@@ -137,7 +136,7 @@ export default function Dashboard() {
                     {mockStats.completedCourses}
                   </p>
                 </div>
-                <IconAward className="w-8 h-8 text-green-500" />
+                <IconAward className="w-8 h-8 text-gray-600" />
               </div>
             </div>
 
@@ -147,7 +146,7 @@ export default function Dashboard() {
                   <p className="text-sm text-muted-foreground">Study Hours</p>
                   <p className="text-2xl font-bold">{mockStats.totalHours}h</p>
                 </div>
-                <IconClock className="w-8 h-8 text-blue-500" />
+                <IconClock className="w-8 h-8 text-gray-600" />
               </div>
             </div>
 
@@ -161,32 +160,11 @@ export default function Dashboard() {
                     {mockStats.currentStreak} days
                   </p>
                 </div>
-                <IconTrendingUp className="w-8 h-8 text-orange-500" />
+                <IconTrendingUp className="w-8 h-8 text-gray-600" />
               </div>
             </div>
           </div>
 
-          {/* Progress Chart */}
-          <div className="bg-card rounded-lg border p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Learning Progress</h2>
-              <div className="flex gap-2">
-                {["week"].map((timeframe) => (
-                  <Button
-                    key={timeframe}
-                    variant={
-                      selectedTimeframe === timeframe ? "default" : "outline"
-                    }
-                    size="sm"
-                    onClick={() => setSelectedTimeframe(timeframe)}
-                  >
-                    {timeframe.charAt(0).toUpperCase() + timeframe.slice(1)}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            <ProgressChart />
-          </div>
 
           {/* My Courses */}
           <div className="bg-card rounded-lg border p-6">
