@@ -1,108 +1,190 @@
-"use client"
-import { Canvas } from '@react-three/fiber'
-import { OrbitControls, useGLTF, Text, Environment } from '@react-three/drei'
-import { useRef, useEffect } from 'react'
-import { useFrame } from '@react-three/fiber'
-import { Group, Mesh } from 'three'
+'use client'
+import { useRef, useEffect, useState } from 'react'
+import { Canvas, useFrame } from '@react-three/fiber'
+import { OrbitControls, Html } from '@react-three/drei'
+import { Group } from 'three'
+// TTS is now handled via API route for security
 
-function ProfessorModel({ isSpeaking }: { isSpeaking: boolean }) {
-  const { scene } = useGLTF('/professor.glb')
-  const groupRef = useRef<Group>(null)
-  
+interface ProfessorProps {
+  isTeaching: boolean;
+  currentText: string;
+}
+
+interface Avatar3DProps {
+  isTeaching?: boolean;
+  isSpeaking?: boolean;
+  currentText?: string;
+  onSpeakingComplete?: () => void;
+}
+
+function Professor({ isTeaching, currentText }: ProfessorProps) {
+  const group = useRef<Group>(null);
+
   useFrame((state) => {
-    if (groupRef.current) {
-      // Gentle floating animation
-      groupRef.current.position.y = Math.sin(state.clock.elapsedTime) * 0.1
-      
-      // Speaking animation - slight head movement
-      if (isSpeaking) {
-        groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 3) * 0.1
-      }
+    if (group.current && isTeaching) {
+      // Simple breathing animation
+      group.current.scale.y = 1 + Math.sin(state.clock.elapsedTime * 2) * 0.05
+      // Slight head nod when speaking
+      group.current.rotation.x = Math.sin(state.clock.elapsedTime * 3) * 0.1
     }
   })
 
   return (
-    <group ref={groupRef}>
-      <primitive object={scene} scale={1.5} />
-      {isSpeaking && (
-        <Text
-          position={[0, 2, 0]}
-          fontSize={0.3}
-          color="#3b82f6"
-          anchorX="center"
-          anchorY="middle"
-        >
-          🎤 Speaking...
-        </Text>
+    <group ref={group}>
+      {/* Simple geometric professor representation */}
+      <mesh position={[0, 1, 0]}>
+        <sphereGeometry args={[0.3, 32, 32]} />
+        <meshStandardMaterial color="#fdbcf4" />
+      </mesh>
+      
+      {/* Body */}
+      <mesh position={[0, 0, 0]}>
+        <cylinderGeometry args={[0.4, 0.3, 1.2, 32]} />
+        <meshStandardMaterial color="#3b82f6" />
+      </mesh>
+      
+      {/* Arms */}
+      <mesh position={[-0.6, 0.2, 0]} rotation={[0, 0, Math.PI / 4]}>
+        <cylinderGeometry args={[0.1, 0.1, 0.8, 16]} />
+        <meshStandardMaterial color="#fdbcf4" />
+      </mesh>
+      <mesh position={[0.6, 0.2, 0]} rotation={[0, 0, -Math.PI / 4]}>
+        <cylinderGeometry args={[0.1, 0.1, 0.8, 16]} />
+        <meshStandardMaterial color="#fdbcf4" />
+      </mesh>
+
+      {/* Speech bubble when speaking */}
+      {isTeaching && currentText && (
+        <Html position={[1.5, 1.5, 0]} center>
+          <div className="bg-white p-3 rounded-lg shadow-lg max-w-xs">
+            <p className="text-sm text-gray-800">{currentText}</p>
+          </div>
+        </Html>
       )}
     </group>
   )
 }
 
-function FallbackProfessor() {
-  const meshRef = useRef<Mesh>(null)
-  
-  useFrame((state) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.1
-      meshRef.current.position.y = Math.sin(state.clock.elapsedTime) * 0.1
+export default function Avatar3D({ 
+  isTeaching = false,
+  isSpeaking = false,
+  currentText = "",
+  onSpeakingComplete 
+}: Avatar3DProps) {
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  // Text-to-Speech functionality with API route
+  const speakText = async (text: string) => {
+    try {
+      // Try OpenAI TTS via API route first
+      const response = await fetch('/api/tts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: text,
+          voice: 'alloy',
+          speed: 0.9,
+          format: 'mp3'
+        }),
+      })
+
+      if (response.ok) {
+        const audioBlob = await response.blob()
+        const audioUrl = URL.createObjectURL(audioBlob)
+        const audio = new Audio(audioUrl)
+        
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl)
+          if (onSpeakingComplete) onSpeakingComplete()
+        }
+        
+        audio.onerror = () => {
+          // Fallback to browser TTS if API TTS fails
+          fallbackToBrowserTTS(text)
+        }
+        
+        await audio.play()
+      } else {
+        // Fallback to browser TTS if API fails
+        fallbackToBrowserTTS(text)
+      }
+    } catch (error) {
+      console.error('API TTS failed, falling back to browser TTS:', error)
+      fallbackToBrowserTTS(text)
     }
-  })
+  }
+
+  // Fallback to browser TTS
+  const fallbackToBrowserTTS = (text: string) => {
+    if ('speechSynthesis' in window) {
+      speechSynthesis.cancel()
+      
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.rate = 0.8
+      utterance.pitch = 1
+      utterance.volume = 0.8
+      
+      const voices = speechSynthesis.getVoices()
+      const preferredVoice = voices.find(voice => 
+        voice.name.includes('Female') || 
+        voice.name.includes('Karen') ||
+        voice.name.includes('Samantha')
+      )
+      if (preferredVoice) {
+        utterance.voice = preferredVoice
+      }
+      
+      utterance.onend = () => {
+        if (onSpeakingComplete) onSpeakingComplete()
+      }
+      
+      speechSynthesis.speak(utterance)
+    }
+  }
+
+  useEffect(() => {
+    if ((isTeaching || isSpeaking) && currentText) {
+      speakText(currentText)
+    }
+  }, [isTeaching, isSpeaking, currentText])
+
+  useEffect(() => {
+    setIsLoaded(true)
+  }, [])
+
+  if (!isLoaded) {
+    return (
+      <div className="w-full h-96 bg-gray-100 rounded-lg flex items-center justify-center">
+        <div className="text-gray-500">Loading AI Professor...</div>
+      </div>
+    )
+  }
 
   return (
-    <group>
-      {/* Simple professor representation */}
-      <mesh ref={meshRef} position={[0, 0, 0]}>
-        <boxGeometry args={[1, 2, 0.5]} />
-        <meshStandardMaterial color="#8b5cf6" />
-      </mesh>
-      {/* Head */}
-      <mesh position={[0, 1.2, 0]}>
-        <sphereGeometry args={[0.4]} />
-        <meshStandardMaterial color="#fbbf24" />
-      </mesh>
-      {/* Eyes */}
-      <mesh position={[-0.15, 1.3, 0.35]}>
-        <sphereGeometry args={[0.05]} />
-        <meshStandardMaterial color="#000" />
-      </mesh>
-      <mesh position={[0.15, 1.3, 0.35]}>
-        <sphereGeometry args={[0.05]} />
-        <meshStandardMaterial color="#000" />
-      </mesh>
-    </group>
-  )
-}
-
-export default function Avatar3D({ isSpeaking = false }: { isSpeaking?: boolean }) {
-  return (
-    <div className="h-full w-full">
-      <Canvas camera={{ position: [0, 0, 5], fov: 50 }}>
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[10, 10, 5]} intensity={1} />
-        <pointLight position={[-10, -10, -5]} intensity={0.5} />
+    <div className="w-full h-96 bg-gradient-to-b from-blue-50 to-purple-50 rounded-lg overflow-hidden relative">
+      <Canvas camera={{ position: [0, 2, 5], fov: 60 }}>
+        <ambientLight intensity={0.5} />
+        <pointLight position={[10, 10, 10]} />
+        <directionalLight position={[0, 10, 5]} intensity={0.5} />
         
-        <Environment preset="studio" />
-        
-        <FallbackProfessor />
+        <Professor isTeaching={isTeaching || isSpeaking} currentText={currentText} />
         
         <OrbitControls 
-          enableZoom={false}
           enablePan={false}
+          enableZoom={false}
           maxPolarAngle={Math.PI / 2}
           minPolarAngle={Math.PI / 3}
         />
       </Canvas>
       
-      {/* Professor Info */}
-      <div className="absolute bottom-4 left-4 bg-card/80 backdrop-blur-sm rounded-lg p-3 border">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-          <span className="text-sm font-medium text-foreground">AI Professor</span>
-        </div>
-        <p className="text-xs text-muted-foreground mt-1">
-          {isSpeaking ? "Teaching lesson..." : "Ready to help"}
-        </p>
+      {/* Status indicator */}
+      <div className="absolute bottom-4 left-4 flex items-center space-x-2">
+        <div className={`w-3 h-3 rounded-full ${(isTeaching || isSpeaking) ? 'bg-green-400 animate-pulse' : 'bg-gray-400'}`}></div>
+        <span className="text-sm text-gray-600">
+          {(isTeaching || isSpeaking) ? 'Teaching...' : 'Ready'}
+        </span>
       </div>
     </div>
   )

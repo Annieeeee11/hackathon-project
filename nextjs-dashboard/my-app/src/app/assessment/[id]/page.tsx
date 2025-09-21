@@ -10,7 +10,6 @@ import {
   IconBook, 
   IconBrain, 
   IconMessageCircle, 
-  IconTrophy,
   IconArrowLeft,
   IconCheck,
   IconClock,
@@ -22,11 +21,10 @@ import {
 
 const sidebarLinks = [
   { label: "Dashboard", href: "/dashboard", icon: <IconBrain className="w-5 h-5" /> },
-  { label: "Generate Course", href: "/", icon: <IconBrain className="w-5 h-5" /> },
+  { label: "Generate Course", href: "/gen-course", icon: <IconBrain className="w-5 h-5" /> },
   { label: "My Courses", href: "/courses", icon: <IconBook className="w-5 h-5" /> },
   { label: "Assessments", href: "/assessments", icon: <IconBrain className="w-5 h-5" /> },
   { label: "Chat with AI", href: "/chat", icon: <IconMessageCircle className="w-5 h-5" /> },
-  { label: "Leaderboard", href: "/leaderboard", icon: <IconTrophy className="w-5 h-5" /> },
 ];
 
 interface Assessment {
@@ -141,30 +139,54 @@ export default SearchableList;`,
   }, [timeRemaining, isCompleted, assessment]);
 
   const handleSubmit = async (code: string) => {
-    if (isSubmitting || isCompleted) return;
+    if (isSubmitting || isCompleted || !assessment) return;
     
     setIsSubmitting(true);
     
     try {
-      // Simulate API call to Judge0
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const mockResult: Result = {
-        success: true,
-        feedback: "Great work! Your component handles all the test cases correctly. Consider adding accessibility features like ARIA labels for better user experience.",
-        score: 85,
-        testResults: assessment?.testCases.map((testCase, index) => ({
-          testCase,
-          passed: index < 2, // Mock: first 2 tests pass
-          actualOutput: index < 2 ? testCase.expectedOutput : "Error: Component not found",
-          error: index >= 2 ? "Component 'SearchableList' is not defined" : undefined
-        })) || [],
-        executionTime: 1.2
-      };
-      
-      setResult(mockResult);
-      setIsCompleted(true);
+      // Call real Judge0 API
+      const response = await fetch('/api/submit-assessment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code,
+          language: assessment.language,
+          testCases: assessment.testCases,
+          expectedOutput: assessment.testCases[0]?.expectedOutput
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        const result: Result = {
+          success: true,
+          feedback: data.result.feedback,
+          score: data.result.score,
+          testResults: data.result.testResults || assessment.testCases.map((testCase, index) => ({
+            testCase,
+            passed: data.result.output?.trim() === testCase.expectedOutput.trim(),
+            actualOutput: data.result.output || '',
+            error: data.result.error
+          })),
+          executionTime: parseFloat(data.result.executionTime) || 0
+        };
+        
+        setResult(result);
+        setIsCompleted(true);
+      } else {
+        setResult({
+          success: false,
+          feedback: data.result?.feedback || "There was an error running your code. Please check for syntax errors and try again.",
+          score: 0,
+          testResults: [],
+          executionTime: 0
+        });
+      }
     } catch (error) {
+      console.error('Assessment submission error:', error);
       setResult({
         success: false,
         feedback: "There was an error running your code. Please check for syntax errors and try again.",

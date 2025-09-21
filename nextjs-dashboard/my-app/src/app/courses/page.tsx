@@ -10,7 +10,6 @@ import {
   IconBrain, 
   IconDashboard, 
   IconMessageCircle, 
-  IconTrophy,
   IconPlus,
   IconSearch,
   IconFilter
@@ -18,53 +17,99 @@ import {
 
 const sidebarLinks = [
   { label: "Dashboard", href: "/dashboard", icon: <IconDashboard className="w-5 h-5" /> },
-  { label: "Generate Course", href: "/", icon: <IconBrain className="w-5 h-5" /> },
+  { label: "Generate Course", href: "/gen-course", icon: <IconBrain className="w-5 h-5" /> },
   { label: "My Courses", href: "/courses", icon: <IconBook className="w-5 h-5" /> },
   { label: "Assessments", href: "/assessments", icon: <IconBook className="w-5 h-5" /> },
   { label: "Chat with AI", href: "/chat", icon: <IconMessageCircle className="w-5 h-5" /> },
-  { label: "Leaderboard", href: "/leaderboard", icon: <IconTrophy className="w-5 h-5" /> },
 ];
 
 const mockCourses = [
   { 
     id: 1, 
     title: "React.js Fundamentals", 
-    progress: 70, 
-    difficulty: "Intermediate",
+    description: "Master the basics of React including components, props, state, and hooks",
     duration: "4 weeks",
-    lessonsCompleted: 7,
-    totalLessons: 10,
-    lastAccessed: "2 hours ago"
+    lessons: [
+      { id: 1, title: "Introduction to React", completed: true },
+      { id: 2, title: "Components and JSX", completed: true },
+      { id: 3, title: "Props and State", completed: true },
+      { id: 4, title: "Event Handling", completed: true },
+      { id: 5, title: "Lifecycle Methods", completed: true },
+      { id: 6, title: "Hooks", completed: true },
+      { id: 7, title: "Context API", completed: true },
+      { id: 8, title: "Routing", completed: false },
+      { id: 9, title: "State Management", completed: false },
+      { id: 10, title: "Testing", completed: false },
+    ],
+    tags: ["react", "javascript", "frontend"],
+    created_at: "2024-01-15"
   },
   { 
     id: 2, 
     title: "Data Structures & Algorithms", 
-    progress: 40, 
-    difficulty: "Advanced",
+    description: "Learn fundamental data structures and algorithms for efficient programming",
     duration: "6 weeks",
-    lessonsCompleted: 4,
-    totalLessons: 12,
-    lastAccessed: "1 day ago"
+    lessons: [
+      { id: 1, title: "Arrays and Lists", completed: true },
+      { id: 2, title: "Stacks and Queues", completed: true },
+      { id: 3, title: "Linked Lists", completed: true },
+      { id: 4, title: "Trees", completed: true },
+      { id: 5, title: "Graphs", completed: false },
+      { id: 6, title: "Sorting Algorithms", completed: false },
+      { id: 7, title: "Searching Algorithms", completed: false },
+      { id: 8, title: "Dynamic Programming", completed: false },
+      { id: 9, title: "Greedy Algorithms", completed: false },
+      { id: 10, title: "Complexity Analysis", completed: false },
+      { id: 11, title: "Hash Tables", completed: false },
+      { id: 12, title: "Advanced Topics", completed: false },
+    ],
+    tags: ["algorithms", "data-structures", "programming"],
+    created_at: "2024-01-10"
   },
   { 
     id: 3, 
     title: "Machine Learning Basics", 
-    progress: 90, 
-    difficulty: "Beginner",
+    description: "Introduction to machine learning concepts and practical applications",
     duration: "3 weeks",
-    lessonsCompleted: 9,
-    totalLessons: 10,
-    lastAccessed: "30 minutes ago"
+    lessons: [
+      { id: 1, title: "Introduction to ML", completed: true },
+      { id: 2, title: "Data Preprocessing", completed: true },
+      { id: 3, title: "Linear Regression", completed: true },
+      { id: 4, title: "Logistic Regression", completed: true },
+      { id: 5, title: "Decision Trees", completed: true },
+      { id: 6, title: "Random Forest", completed: true },
+      { id: 7, title: "Clustering", completed: true },
+      { id: 8, title: "Neural Networks", completed: true },
+      { id: 9, title: "Model Evaluation", completed: true },
+      { id: 10, title: "Deployment", completed: false },
+    ],
+    tags: ["machine-learning", "python", "ai"],
+    created_at: "2024-01-05"
   },
   { 
     id: 4, 
     title: "JavaScript Mastery", 
-    progress: 100, 
-    difficulty: "Intermediate",
+    description: "Advanced JavaScript concepts and modern development practices",
     duration: "5 weeks",
-    lessonsCompleted: 15,
-    totalLessons: 15,
-    lastAccessed: "3 days ago"
+    lessons: [
+      { id: 1, title: "ES6+ Features", completed: true },
+      { id: 2, title: "Async/Await", completed: true },
+      { id: 3, title: "Promises", completed: true },
+      { id: 4, title: "Closures", completed: true },
+      { id: 5, title: "Prototypes", completed: true },
+      { id: 6, title: "Modules", completed: true },
+      { id: 7, title: "Generators", completed: true },
+      { id: 8, title: "Proxy", completed: true },
+      { id: 9, title: "Symbols", completed: true },
+      { id: 10, title: "Iterators", completed: true },
+      { id: 11, title: "Maps and Sets", completed: true },
+      { id: 12, title: "Performance", completed: true },
+      { id: 13, title: "Testing", completed: true },
+      { id: 14, title: "Build Tools", completed: true },
+      { id: 15, title: "Deployment", completed: true },
+    ],
+    tags: ["javascript", "es6", "advanced"],
+    created_at: "2024-01-01"
   },
 ];
 
@@ -74,7 +119,9 @@ export default function CoursesPage() {
 
   const filteredCourses = mockCourses.filter(course => {
     const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDifficulty = filterDifficulty === "all" || course.difficulty.toLowerCase() === filterDifficulty;
+    // Since we removed difficulty from the new structure, we'll filter by tags instead
+    const matchesDifficulty = filterDifficulty === "all" || 
+      course.tags.some(tag => tag.toLowerCase().includes(filterDifficulty.toLowerCase()));
     return matchesSearch && matchesDifficulty;
   });
 
@@ -134,7 +181,7 @@ export default function CoursesPage() {
           {/* Courses Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCourses.map((course) => (
-              <CourseCard key={course.id} {...course} />
+              <CourseCard key={course.id} course={course} />
             ))}
           </div>
 
