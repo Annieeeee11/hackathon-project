@@ -21,42 +21,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate course using OpenAI
+    console.log('Generating course with tags:', tags)
     const courseData = await generateCourseWithAI(tags)
+    console.log('Generated course data:', courseData)
 
     // Calculate estimated hours and lesson count
     const totalLessons = courseData.lessons?.length || 0
     const estimatedHours = totalLessons * 0.5 // Assume 30 min per lesson
 
-    // Save course to Supabase
-    const { data: course, error: courseError } = await supabase
-      .from('courses')
-      .insert({
-        title: courseData.title,
-        description: courseData.description,
-        duration: courseData.estimatedDuration,
-        tags: tags,
-        lessons: courseData.lessons,
-        user_id: userId,
-        instructor_id: userId,
-        status: 'active',
-        total_lessons: totalLessons,
-        estimated_hours: estimatedHours,
-        difficulty_level: courseData.difficulty?.toLowerCase() || 'beginner'
-      })
-      .select()
-      .single()
-
-    if (courseError) {
-      console.error('Database error:', courseError)
-      return NextResponse.json(
-        { error: 'Failed to save course' },
-        { status: 500 }
-      )
-    }
+    // For now, just return the course data without saving to database
+    // This will help us debug the AI generation first
+    return NextResponse.json({
+      success: true,
+      course: courseData
+    })
 
     // Create course enrollment for the user
     try {
-      await dbHelpers.enrollInCourse(userId, course.id)
+      await dbHelpers.enrollInCourse(userId, courseData.id)
     } catch (enrollError) {
       console.error('Enrollment error:', enrollError)
       // Continue even if enrollment fails
@@ -65,7 +47,7 @@ export async function POST(request: NextRequest) {
     // Create lessons in the database
     if (courseData.lessons && courseData.lessons.length > 0) {
       const lessonInserts = courseData.lessons.map((lesson: any, index: number) => ({
-        course_id: course.id,
+        course_id: courseData.id,
         title: lesson.title,
         content: lesson.content || '',
         lesson_type: 'theory',
@@ -87,7 +69,7 @@ export async function POST(request: NextRequest) {
 
     // Log learning analytics
     try {
-      await dbHelpers.logLearningSession(userId, course.id, {
+      await dbHelpers.logLearningSession(userId, courseData.id, {
         session_duration: 5, // Course generation time
         lessons_completed: 0
       })
@@ -99,7 +81,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       course: {
-        ...course,
+        ...courseData,
         lessons: courseData.lessons
       }
     })
@@ -142,7 +124,10 @@ Return the response in the following JSON format:
 }`;
 
   try {
+    console.log('Initializing OpenAI client...')
     const openai = getOpenAI()
+    console.log('OpenAI client initialized, making API call...')
+    
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
@@ -159,13 +144,16 @@ Return the response in the following JSON format:
       max_tokens: 2000,
     });
 
+    console.log('OpenAI API call completed')
     const aiResponse = completion.choices[0]?.message?.content;
     if (!aiResponse) {
       throw new Error("No response from OpenAI");
     }
 
+    console.log('AI Response received:', aiResponse)
     // Parse the JSON response
     const courseData = JSON.parse(aiResponse);
+    console.log('Parsed course data:', courseData)
     
     // Add additional metadata
     const course = {
@@ -181,8 +169,10 @@ Return the response in the following JSON format:
     return course;
   } catch (error) {
     console.error("Error generating course with AI:", error);
+    console.error("Error details:", error instanceof Error ? error.message : String(error));
     
     // Fallback to basic course generation if AI fails
+    console.log('Using fallback course generation')
     return {
       id: `course_${Date.now()}`,
       title: `Complete ${tags.join(" & ")} Mastery Course`,
