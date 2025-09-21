@@ -60,7 +60,7 @@ export default function GenerateCoursePage() {
       setAuthLoading(false);
       
       if (!user) {
-        router.push('/auth');
+        router.push('/');
       }
     };
 
@@ -70,7 +70,7 @@ export default function GenerateCoursePage() {
       (event, session) => {
         setUser(session?.user ?? null);
         if (!session?.user) {
-          router.push('/auth');
+          router.push('/');
         }
       }
     );
@@ -114,7 +114,7 @@ export default function GenerateCoursePage() {
       const response = await fetch("/api/generate-course", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tags }),
+        body: JSON.stringify({ tags, userId: user?.id }),
       });
 
       if (!response.ok) {

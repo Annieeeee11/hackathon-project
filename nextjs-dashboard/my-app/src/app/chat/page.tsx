@@ -138,7 +138,11 @@ export default function ChatPage() {
                 >
                   <p className="whitespace-pre-wrap">{message.text}</p>
                   <p className="text-xs opacity-70 mt-2">
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {message.timestamp.toLocaleTimeString('en-US', { 
+                      hour: '2-digit', 
+                      minute: '2-digit',
+                      hour12: false 
+                    })}
                   </p>
                 </div>
                 

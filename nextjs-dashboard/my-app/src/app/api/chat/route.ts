@@ -1,27 +1,16 @@
 import { NextResponse } from "next/server";
-<<<<<<< HEAD
-import { openai } from "@/lib/openaiClient";
-
-export async function POST(req: Request) {
-  try {
-    const { question, lessonId, context } = await req.json();
-=======
 import { answerDoubt } from "@/lib/openaiClient";
 import { dbHelpers, supabase } from "@/lib/supabaseClient";
+import OpenAI from "openai";
 
 export async function POST(req: Request) {
   try {
     const { question, lessonId, courseId, userId } = await req.json();
->>>>>>> 3ce65133f5781cf3b6e75551a8ce34ad65468b9b
 
     if (!question) {
       return NextResponse.json({ error: "Question is required" }, { status: 400 });
     }
 
-<<<<<<< HEAD
-    // Generate AI answer using OpenAI
-    const answer = await generateAIAnswer(question, lessonId, context);
-=======
     try {
       // Get lesson content for context from database
       let lessonContent = "General programming concepts.";
@@ -33,7 +22,6 @@ export async function POST(req: Request) {
             .select('title, content, objectives')
             .eq('id', lessonId)
             .single();
->>>>>>> 3ce65133f5781cf3b6e75551a8ce34ad65468b9b
 
           if (!lessonError && lessonData) {
             lessonContent = `Lesson: ${lessonData.title}\nContent: ${lessonData.content}\nObjectives: ${lessonData.objectives?.join(', ') || 'N/A'}`;
@@ -44,7 +32,7 @@ export async function POST(req: Request) {
       }
       
       // Generate AI response using OpenAI
-      const answer = await answerDoubt(question, lessonContent);
+      const answer = await generateAIAnswer(question, lessonId, lessonContent);
 
       // Save chat interaction to database if user is authenticated
       if (userId && userId !== 'demo-user') {
@@ -74,7 +62,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
-
 async function generateAIAnswer(question: string, lessonId?: string, context?: string) {
   try {
     const systemPrompt = `You are an expert AI Professor and educational assistant. You help students learn by providing clear, detailed, and engaging explanations. 
@@ -89,6 +76,10 @@ Your teaching style:
 ${lessonId ? `You are currently helping with lesson: ${lessonId}` : ''}
 ${context ? `Additional context: ${context}` : ''}`;
 
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+    
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
@@ -118,3 +109,4 @@ ${context ? `Additional context: ${context}` : ''}`;
     return `I understand you're asking about "${question}". While I'm having trouble accessing my full knowledge base right now, I'd be happy to help you learn more about this topic. Could you provide a bit more context about what specific aspect you'd like to understand better?`;
   }
 }
+

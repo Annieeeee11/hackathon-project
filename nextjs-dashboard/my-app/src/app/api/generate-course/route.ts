@@ -1,12 +1,6 @@
-<<<<<<< HEAD
-import { NextResponse } from "next/server";
-import { openai } from "@/lib/openaiClient";
-import { supabase } from "@/lib/supabaseClient";
-=======
 import { NextRequest, NextResponse } from 'next/server'
-import { generateCourse } from '../../../lib/openaiClient'
-import { supabase, dbHelpers } from '../../../lib/supabaseClient'
->>>>>>> 3ce65133f5781cf3b6e75551a8ce34ad65468b9b
+import getOpenAI from '@/lib/openaiClient'
+import { supabase, dbHelpers } from '@/lib/supabaseClient'
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,16 +13,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-<<<<<<< HEAD
-    // Generate course using OpenAI
-    const course = await generateCourseWithAI(tags);
-
-    // Optionally save to Supabase
-    // const { data, error } = await supabase
-    //   .from('courses')
-    //   .insert(course)
-    //   .select();
-=======
     if (!userId) {
       return NextResponse.json(
         { error: 'User ID is required' },
@@ -37,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate course using OpenAI
-    const courseData = await generateCourse(tags)
+    const courseData = await generateCourseWithAI(tags)
 
     // Calculate estimated hours and lesson count
     const totalLessons = courseData.lessons?.length || 0
@@ -49,16 +33,15 @@ export async function POST(request: NextRequest) {
       .insert({
         title: courseData.title,
         description: courseData.description,
-        duration: courseData.duration,
+        duration: courseData.estimatedDuration,
         tags: tags,
         lessons: courseData.lessons,
-        assessments: courseData.assessments,
         user_id: userId,
         instructor_id: userId,
         status: 'active',
         total_lessons: totalLessons,
         estimated_hours: estimatedHours,
-        difficulty_level: 'beginner'
+        difficulty_level: courseData.difficulty?.toLowerCase() || 'beginner'
       })
       .select()
       .single()
@@ -102,30 +85,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create assessments in the database
-    if (courseData.assessments && courseData.assessments.length > 0) {
-      const assessmentInserts = courseData.assessments.map((assessment: any) => ({
-        course_id: course.id,
-        title: assessment.title,
-        description: assessment.description,
-        assessment_type: assessment.type || 'quiz',
-        questions: assessment.questions || {},
-        max_score: 100,
-        passing_score: 70,
-        time_limit_minutes: 60,
-        is_published: true
-      }))
-
-      const { error: assessmentsError } = await supabase
-        .from('assessments')
-        .insert(assessmentInserts)
-
-      if (assessmentsError) {
-        console.error('Assessments creation error:', assessmentsError)
-        // Continue even if assessments creation fails
-      }
-    }
-
     // Log learning analytics
     try {
       await dbHelpers.logLearningSession(userId, course.id, {
@@ -141,11 +100,9 @@ export async function POST(request: NextRequest) {
       success: true,
       course: {
         ...course,
-        lessons: courseData.lessons,
-        assessments: courseData.assessments
+        lessons: courseData.lessons
       }
     })
->>>>>>> 3ce65133f5781cf3b6e75551a8ce34ad65468b9b
 
   } catch (error) {
     console.error('Course generation error:', error)
@@ -154,7 +111,6 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-<<<<<<< HEAD
 }
 
 async function generateCourseWithAI(tags: string[]) {
@@ -186,6 +142,7 @@ Return the response in the following JSON format:
 }`;
 
   try {
+    const openai = getOpenAI()
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
@@ -295,6 +252,3 @@ function generateFallbackLessons(tags: string[]) {
 
   return lessons;
 }
-=======
-}
->>>>>>> 3ce65133f5781cf3b6e75551a8ce34ad65468b9b
