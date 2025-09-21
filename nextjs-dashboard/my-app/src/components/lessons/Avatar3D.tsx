@@ -4,6 +4,7 @@ import { OrbitControls, useGLTF, Text, Environment, Html } from '@react-three/dr
 import { useRef, useEffect, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Group, Mesh } from 'three'
+import { ttsManager } from '@/lib/tts'
 
 interface ProfessorModelProps {
   isSpeaking: boolean;
@@ -182,6 +183,8 @@ interface Avatar3DProps {
   emotion?: 'neutral' | 'happy' | 'thinking' | 'explaining';
   showControls?: boolean;
   className?: string;
+  enableVoice?: boolean;
+  onSpeakingChange?: (isSpeaking: boolean) => void;
 }
 
 export default function Avatar3D({ 
@@ -189,9 +192,15 @@ export default function Avatar3D({
   currentMessage = "",
   emotion = 'neutral',
   showControls = true,
-  className = ""
+  className = "",
+  enableVoice = true,
+  onSpeakingChange
 }: Avatar3DProps) {
   const [hasGLTF, setHasGLTF] = useState(false)
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(enableVoice)
+  const [isActuallySpeaking, setIsActuallySpeaking] = useState(false)
+  const [lastSpokenMessage, setLastSpokenMessage] = useState("")
+  const [needsUserInteraction, setNeedsUserInteraction] = useState(true)
   
   useEffect(() => {
     // Check if GLTF model exists
@@ -200,7 +209,53 @@ export default function Avatar3D({
       .catch(() => setHasGLTF(false))
   }, [])
 
+  // Set up TTS speaking state callback and check interaction status
+  useEffect(() => {
+    ttsManager.onSpeakingStateChange((speaking) => {
+      setIsActuallySpeaking(speaking)
+      onSpeakingChange?.(speaking)
+    })
+
+    // Check if user interaction is needed
+    const checkInteraction = () => {
+      setNeedsUserInteraction(!ttsManager.hasUserInteraction())
+    }
+
+    checkInteraction()
+    
+    // Check periodically in case user interacts elsewhere
+    const interval = setInterval(checkInteraction, 1000)
+    
+    return () => clearInterval(interval)
+  }, [onSpeakingChange])
+
+  // Handle voice speaking when message changes
+  useEffect(() => {
+    if (isVoiceEnabled && currentMessage && currentMessage !== lastSpokenMessage && currentMessage.trim()) {
+      setLastSpokenMessage(currentMessage)
+      
+      // Speak the message as professor with error handling
+      ttsManager.speakAsProfessor(currentMessage)
+        .then(() => {
+          console.log('TTS completed successfully')
+        })
+        .catch(error => {
+          console.warn('TTS Error:', error)
+          // Optionally show user-friendly error message
+          // You could set an error state here if needed
+        })
+    }
+  }, [currentMessage, isVoiceEnabled, lastSpokenMessage])
+
+  // Clean up TTS when component unmounts
+  useEffect(() => {
+    return () => {
+      ttsManager.stop()
+    }
+  }, [])
+
   const getStatusMessage = () => {
+    if (isActuallySpeaking) return "🎤 Speaking aloud..."
     if (isSpeaking) return "Teaching lesson..."
     switch (emotion) {
       case 'thinking': return "Processing your question..."
@@ -211,12 +266,33 @@ export default function Avatar3D({
   }
 
   const getStatusColor = () => {
+    if (isActuallySpeaking) return 'bg-purple-500'
     switch (emotion) {
       case 'happy': return 'bg-green-500'
       case 'thinking': return 'bg-yellow-500'
       case 'explaining': return 'bg-blue-500'
       default: return 'bg-green-500'
     }
+  }
+
+  const toggleVoice = () => {
+    if (isActuallySpeaking) {
+      ttsManager.stop()
+    }
+    
+    // Enable TTS on first voice toggle
+    if (!isVoiceEnabled && needsUserInteraction) {
+      ttsManager.enableTTS()
+      setNeedsUserInteraction(false)
+    }
+    
+    setIsVoiceEnabled(!isVoiceEnabled)
+  }
+
+  const enableVoiceWithInteraction = () => {
+    ttsManager.enableTTS()
+    setNeedsUserInteraction(false)
+    setIsVoiceEnabled(true)
   }
 
   return (
@@ -231,13 +307,13 @@ export default function Avatar3D({
         
         {hasGLTF ? (
           <ProfessorModel 
-            isSpeaking={isSpeaking} 
+            isSpeaking={isSpeaking || isActuallySpeaking} 
             currentMessage={currentMessage}
             emotion={emotion}
           />
         ) : (
           <FallbackProfessor 
-            isSpeaking={isSpeaking} 
+            isSpeaking={isSpeaking || isActuallySpeaking} 
             emotion={emotion}
           />
         )}
@@ -257,7 +333,7 @@ export default function Avatar3D({
       {/* Professor Info Panel */}
       <div className="absolute bottom-4 left-4 bg-card/90 backdrop-blur-sm rounded-lg p-3 border shadow-lg">
         <div className="flex items-center gap-2">
-          <div className={`w-3 h-3 ${getStatusColor()} rounded-full ${isSpeaking ? 'animate-pulse' : ''}`}></div>
+          <div className={`w-3 h-3 ${getStatusColor()} rounded-full ${(isSpeaking || isActuallySpeaking) ? 'animate-pulse' : ''}`}></div>
           <span className="text-sm font-medium text-foreground">AI Professor</span>
         </div>
         <p className="text-xs text-muted-foreground mt-1">
@@ -274,15 +350,54 @@ export default function Avatar3D({
       {showControls && (
         <div className="absolute top-4 right-4 bg-card/90 backdrop-blur-sm rounded-lg p-2 border shadow-lg">
           <div className="flex flex-col gap-2">
+            {needsUserInteraction ? (
+              <button 
+                className="text-xs px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors"
+                onClick={enableVoiceWithInteraction}
+                title="Click to enable voice (requires user interaction)"
+              >
+                🔊 Enable Voice
+              </button>
+            ) : (
+              <button 
+                className={`text-xs px-2 py-1 rounded hover:opacity-80 transition-colors ${
+                  isVoiceEnabled 
+                    ? 'bg-green-500 text-white' 
+                    : 'bg-red-500 text-white'
+                }`}
+                onClick={toggleVoice}
+                title={isVoiceEnabled ? 'Voice: ON (Click to mute)' : 'Voice: OFF (Click to enable)'}
+              >
+                {isVoiceEnabled ? '🔊 Voice ON' : '🔇 Voice OFF'}
+              </button>
+            )}
+            
+            {isActuallySpeaking && (
+              <button 
+                className="text-xs px-2 py-1 bg-orange-500 text-white rounded hover:bg-orange-600"
+                onClick={() => ttsManager.stop()}
+                title="Stop speaking"
+              >
+                ⏹️ Stop
+              </button>
+            )}
+            
             <button 
               className="text-xs px-2 py-1 bg-primary text-primary-foreground rounded hover:bg-primary/80"
               onClick={() => window.location.reload()}
             >
               Reset View
             </button>
-            <div className="text-xs text-muted-foreground">
+            
+            <div className="text-xs text-muted-foreground text-center">
               Drag to rotate
             </div>
+            
+            {needsUserInteraction && (
+              <div className="text-xs text-yellow-600 text-center">
+                Click to enable voice
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -11,6 +11,16 @@ interface Message {
   isTyping?: boolean
 }
 
+// Utility function to format time consistently for SSR
+const formatTime = (date: Date): string => {
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const displayHours = hours % 12 || 12;
+  const displayMinutes = minutes.toString().padStart(2, '0');
+  return `${displayHours}:${displayMinutes} ${ampm}`;
+};
+
 export default function ChatBox({ lessonId }: { lessonId: string }) {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -22,7 +32,13 @@ export default function ChatBox({ lessonId }: { lessonId: string }) {
   ])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isClient, setIsClient] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Ensure we're on the client side to prevent hydration issues
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -123,7 +139,7 @@ export default function ChatBox({ lessonId }: { lessonId: string }) {
             >
               <p className="text-sm whitespace-pre-wrap">{message.text}</p>
               <p className="text-xs opacity-70 mt-1">
-                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {isClient ? formatTime(message.timestamp) : ''}
               </p>
             </div>
             

@@ -204,6 +204,17 @@ function Counter() {
                   emotion={avatarEmotion}
                   showControls={true}
                   className="h-full"
+                  enableVoice={true}
+                  onSpeakingChange={(speaking) => {
+                    // Sync lesson state with actual speech
+                    if (!speaking && isPlaying) {
+                      // Speech finished, update lesson state
+                      setTimeout(() => {
+                        setAvatarEmotion('neutral');
+                        setCurrentAvatarMessage("");
+                      }, 1000);
+                    }
+                  }}
                 />
               </div>
             </div>
