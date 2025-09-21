@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
+import Avatar3D from "@/components/lessons/Avatar3D";
 import { 
   IconSend,
   IconLoader2,
@@ -19,6 +20,16 @@ interface Message {
   timestamp: Date;
 }
 
+// Utility function to format time consistently for SSR
+const formatTime = (date: Date): string => {
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const displayHours = hours % 12 || 12;
+  const displayMinutes = minutes.toString().padStart(2, '0');
+  return `${displayHours}:${displayMinutes} ${ampm}`;
+};
+
 export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -30,7 +41,15 @@ export default function ChatPage() {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [avatarEmotion, setAvatarEmotion] = useState<'neutral' | 'happy' | 'thinking' | 'explaining'>('neutral');
+  const [currentAvatarMessage, setCurrentAvatarMessage] = useState("");
+  const [isClient, setIsClient] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Ensure we're on the client side to prevent hydration issues
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -54,6 +73,10 @@ export default function ChatPage() {
     const currentInput = input.trim();
     setInput("");
     setIsLoading(true);
+    
+    // Set avatar to thinking state
+    setAvatarEmotion('thinking');
+    setCurrentAvatarMessage("Processing your question...");
 
     try {
       // Call the AI chat API
@@ -81,7 +104,18 @@ export default function ChatPage() {
         timestamp: new Date()
       };
 
+      // Set avatar to explaining state with the response
+      setAvatarEmotion('explaining');
+      setCurrentAvatarMessage(aiResponse.text);
+      
       setMessages(prev => [...prev, aiResponse]);
+      
+      // After 3 seconds, set avatar back to neutral
+      setTimeout(() => {
+        setAvatarEmotion('neutral');
+        setCurrentAvatarMessage("");
+      }, 3000);
+      
     } catch (error) {
       console.error('Error sending message:', error);
       const errorMessage: Message = {
@@ -91,6 +125,10 @@ export default function ChatPage() {
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);
+      
+      // Set avatar to neutral on error
+      setAvatarEmotion('neutral');
+      setCurrentAvatarMessage("");
     } finally {
       setIsLoading(false);
     }
@@ -106,17 +144,45 @@ export default function ChatPage() {
 
   return (
     <AppLayout>
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="flex justify-between items-center p-6 border-b">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Chat with AI Professor</h1>
-            <p className="text-muted-foreground mt-1">Get instant help with your programming questions</p>
+    <div className="flex h-screen bg-background">
+        {/* 3D Avatar Section */}
+        <div className="w-1/3 border-r bg-card/50">
+          <div className="h-full flex flex-col">
+            <div className="p-4 border-b">
+              <h2 className="text-lg font-semibold text-foreground">AI Professor</h2>
+              <p className="text-sm text-muted-foreground">Your interactive learning companion</p>
+            </div>
+            <div className="flex-1">
+              <Avatar3D 
+                isSpeaking={isLoading || avatarEmotion === 'explaining'}
+                currentMessage={currentAvatarMessage}
+                emotion={avatarEmotion}
+                showControls={true}
+                className="h-full"
+                enableVoice={true}
+                onSpeakingChange={(speaking) => {
+                  // Update UI based on actual speech state
+                  if (speaking && avatarEmotion !== 'explaining') {
+                    setAvatarEmotion('explaining');
+                  }
+                }}
+              />
+            </div>
           </div>
-          <ModeToggle />
-        </header>
+        </div>
 
-        {/* Chat Messages */}
-        <div className="flex-1 overflow-y-auto p-6">
+        {/* Chat Section */}
+        <div className="flex-1 flex flex-col">
+          <header className="flex justify-between items-center p-6 border-b">
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Chat Interface</h1>
+              <p className="text-muted-foreground mt-1">Ask questions and get instant AI responses</p>
+            </div>
+            <ModeToggle />
+          </header>
+
+          {/* Chat Messages */}
+          <div className="flex-1 overflow-y-auto p-6">
           <div className="max-w-4xl mx-auto space-y-6">
             {messages.map((message) => (
               <div
@@ -138,11 +204,7 @@ export default function ChatPage() {
                 >
                   <p className="whitespace-pre-wrap">{message.text}</p>
                   <p className="text-xs opacity-70 mt-2">
-                    {message.timestamp.toLocaleTimeString('en-US', { 
-                      hour: '2-digit', 
-                      minute: '2-digit',
-                      hour12: false 
-                    })}
+                    {isClient ? formatTime(message.timestamp) : ''}
                   </p>
                 </div>
                 
@@ -172,30 +234,31 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Input */}
-        <div className="p-6 border-t bg-card">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex gap-3">
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Ask me anything about programming, concepts, or your learning journey..."
-                className="flex-1 min-h-[50px] max-h-32 px-4 py-3 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                rows={1}
-              />
-              <Button
-                onClick={sendMessage}
-                disabled={!input.trim() || isLoading}
-                size="lg"
-                className="px-6"
-              >
-                <IconSend className="w-5 h-5" />
-              </Button>
+          {/* Input */}
+          <div className="p-6 border-t bg-card">
+            <div className="max-w-4xl mx-auto">
+              <div className="flex gap-3">
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Ask me anything about programming, concepts, or your learning journey..."
+                  className="flex-1 min-h-[50px] max-h-32 px-4 py-3 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                  rows={1}
+                />
+                <Button
+                  onClick={sendMessage}
+                  disabled={!input.trim() || isLoading}
+                  size="lg"
+                  className="px-6"
+                >
+                  <IconSend className="w-5 h-5" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Press Enter to send, Shift+Enter for new line
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Press Enter to send, Shift+Enter for new line
-            </p>
           </div>
         </div>
       </div>
