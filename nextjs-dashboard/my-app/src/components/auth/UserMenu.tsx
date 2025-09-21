@@ -50,7 +50,7 @@ export function UserMenu() {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        {/* <DropdownMenuItem>
           <IconUser className="w-4 h-4 mr-2" />
           Profile
         </DropdownMenuItem>
@@ -58,7 +58,7 @@ export function UserMenu() {
           <IconSettings className="w-4 h-4 mr-2" />
           Settings
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator /> */}
         <DropdownMenuItem 
           onClick={handleSignOut}
           disabled={loading}
