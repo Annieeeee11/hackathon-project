@@ -45,8 +45,8 @@ export default function LandingPage() {
     },
     {
       icon: <IconUsers className="w-6 h-6" />,
-      title: "Community Learning",
-      description: "Join a community of learners and share knowledge with fellow students."
+      title: "Self Learning",
+      description: "Join a self learning experience."
     }
   ];
 
@@ -120,9 +120,9 @@ export default function LandingPage() {
                 <IconArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
-            <Button variant="outline" size="lg" className="w-full sm:w-auto">
+            {/* <Button variant="outline" size="lg" className="w-full sm:w-auto">
               Watch Demo
-            </Button>
+            </Button> */}
           </div>
         </div>
       </section>

@@ -3,15 +3,21 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
+import { ModeToggle } from "@/components/modeToggle";
 import { 
   IconPlus,
   IconX,
   IconLoader2,
   IconDashboard,
-  IconBrain
+  IconBrain,
+  IconMessageCircle,
+  IconArrowRight,
+  IconRocket,
+  IconBook
 } from "@tabler/icons-react";
+import Link from "next/link";
+import AppLayout from "@/components/layout/AppLayout";
 
 interface Lesson {
   id: string;
@@ -54,7 +60,7 @@ export default function GenerateCoursePage() {
       setAuthLoading(false);
       
       if (!user) {
-        router.push('/');
+        router.push('/auth');
       }
     };
 
@@ -64,7 +70,7 @@ export default function GenerateCoursePage() {
       (event, session) => {
         setUser(session?.user ?? null);
         if (!session?.user) {
-          router.push('/');
+          router.push('/auth');
         }
       }
     );
@@ -125,16 +131,48 @@ export default function GenerateCoursePage() {
   };
 
   return (
-    <AppLayout 
-      title="Generate Course" 
-      subtitle="Create personalized courses with AI Professor"
-    >
-      <div className="max-w-4xl mx-auto space-y-6">
+    <AppLayout>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="flex justify-between items-center p-6 border-b">
+        <div className="flex items-center gap-2">
+          <IconBrain className="w-8 h-8 text-primary" />
+          <h1 className="text-2xl font-bold text-foreground">AI Learning Assistant</h1>
+        </div>
+        <div className="flex items-center gap-4">
+          <ModeToggle />
+          <Link href="/chat">
+            <Button variant="outline">
+              <IconMessageCircle className="w-4 h-4 mr-2" />
+              AI Chat
+            </Button>
+          </Link>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="py-12 px-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center">
+                <IconRocket className="w-8 h-8 text-primary-foreground" />
+              </div>
+            </div>
+            <h1 className="text-4xl font-bold text-foreground mb-4">
+              Generate Your
+              <span className="text-primary"> AI Course</span>
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Create personalized courses with our AI Professor. Add skill tags and get structured lessons tailored just for you!
+            </p>
+          </div>
+
           {/* Course Generator Section */}
-          <div className="bg-card rounded-lg border p-6 mb-6">
+          <div className="bg-card rounded-lg border p-8 mb-8">
             <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
               <IconBrain className="w-6 h-6 text-primary" />
-              Generate Your Course
+              Course Generator
             </h2>
             
             <p className="text-muted-foreground mb-6">
@@ -229,12 +267,13 @@ export default function GenerateCoursePage() {
                 <>
                   <IconBrain className="w-4 h-4 mr-2" />
                   Generate Course with AI Professor
+                  <IconArrowRight className="w-4 h-4 ml-2" />
                 </>
               )}
             </Button>
 
             {error && (
-              <div className="mt-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+              <div className="mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
                 <p className="text-destructive text-sm">{error}</p>
               </div>
             )}
@@ -242,42 +281,54 @@ export default function GenerateCoursePage() {
 
           {/* Generated Course Display */}
           {course && (
-            <div className="bg-card rounded-lg border p-6">
-              <div className="flex items-start justify-between mb-4">
+            <div className="bg-card rounded-lg border p-8">
+              <div className="flex items-start justify-between mb-6">
                 <div>
-                  <h2 className="text-2xl font-semibold mb-2">{course.title}</h2>
-                  <p className="text-muted-foreground mb-4">{course.description}</p>
-                  <div className="flex gap-4 text-sm text-muted-foreground">
-                    <span>📚 {course.lessons.length} lessons</span>
-                    <span>⏱️ {course.estimatedDuration}</span>
-                    <span>📊 {course.difficulty}</span>
+                  <h2 className="text-3xl font-bold mb-3">{course.title}</h2>
+                  <p className="text-muted-foreground mb-4 text-lg">{course.description}</p>
+                  <div className="flex gap-6 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <IconBook className="w-4 h-4" />
+                      <span>{course.lessons.length} lessons</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <IconLoader2 className="w-4 h-4" />
+                      <span>{course.estimatedDuration}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <IconBrain className="w-4 h-4" />
+                      <span>{course.difficulty}</span>
+                    </div>
                   </div>
                 </div>
-                <Button className="bg-primary hover:bg-primary/90">
-                  <IconDashboard className="w-4 h-4 mr-2" />
-                  Start Learning
-                </Button>
+                <Link href="/dashboard">
+                  <Button size="lg" className="bg-primary hover:bg-primary/90">
+                    <IconDashboard className="w-4 h-4 mr-2" />
+                    Start Learning
+                    <IconArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
               </div>
 
-              <div className="space-y-3">
-                <h3 className="font-medium">Course Outline</h3>
+              <div className="space-y-4">
+                <h3 className="text-xl font-semibold">Course Outline</h3>
                 {course.lessons.map((lesson, index) => (
                   <div
                     key={lesson.id}
-                    className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                    className="flex items-center justify-between p-4 bg-muted rounded-lg hover:shadow-md transition-shadow"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
                         {index + 1}
                       </div>
                       <div>
-                        <h4 className="font-medium">{lesson.title}</h4>
-                        <p className="text-sm text-muted-foreground">{lesson.content}</p>
+                        <h4 className="font-semibold text-lg">{lesson.title}</h4>
+                        <p className="text-muted-foreground">{lesson.content}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
                       <span>{lesson.duration}</span>
-                      <span className={`px-2 py-1 rounded text-xs ${
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                         lesson.difficulty === 'Beginner' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
                         lesson.difficulty === 'Intermediate' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
                         'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
@@ -290,7 +341,9 @@ export default function GenerateCoursePage() {
               </div>
             </div>
           )}
-      </div>
+        </div>
+      </section>
+    </div>
     </AppLayout>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
-import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import Avatar3D from "@/components/lessons/Avatar3D";
 import ChatBox from "@/components/lessons/ChatBox";
@@ -14,9 +13,13 @@ import {
   IconCode,
   IconBulb,
   IconMessageCircle,
-  IconBook
+  IconBook,
+  IconBrain,
+  IconRocket
 } from "@tabler/icons-react";
 import { ModeToggle } from "@/components/modeToggle";
+import Link from "next/link";
+import AppLayout from "@/components/layout/AppLayout";
 
 
 interface Lesson {
@@ -183,46 +186,65 @@ function Counter() {
 
   return (
     <AppLayout>
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="flex justify-between items-center p-6 border-b">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={() => window.history.back()}>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="flex justify-between items-center p-6 border-b">
+        <div className="flex items-center gap-4">
+          <Link href="/courses">
+            <Button variant="outline" size="sm">
               <IconArrowLeft className="w-4 h-4 mr-2" />
-              Back to Course
+              Back to Courses
             </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">{lesson.title}</h1>
-              <p className="text-muted-foreground">
-                {lesson.difficulty} • {lesson.duration}
-              </p>
-            </div>
-          </div>
+          </Link>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowChat(!showChat)}
-            >
-              <IconMessageCircle className="w-4 h-4 mr-2" />
-              Ask AI Professor
-            </Button>
-            <ModeToggle />
+            <IconBrain className="w-6 h-6 text-primary" />
+            <h1 className="text-xl font-bold text-foreground">AI Learning Assistant</h1>
           </div>
-        </header>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowChat(!showChat)}
+          >
+            <IconMessageCircle className="w-4 h-4 mr-2" />
+            Ask AI Professor
+          </Button>
+          <ModeToggle />
+        </div>
+      </header>
 
-        <div className="flex-1 flex overflow-hidden">
-          {/* Main Content Area */}
-          <div className="flex-1 flex flex-col">
-            {/* 3D Avatar Section */}
-            <div className="h-64 bg-gradient-to-br from-primary/10 to-secondary/10 border-b">
-              <div className="h-full flex items-center justify-center">
-                <Avatar3D isSpeaking={isPlaying} />
+      {/* Hero Section */}
+      <section className="py-8 px-6 border-b">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-6">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center">
+                <IconRocket className="w-8 h-8 text-primary-foreground" />
               </div>
             </div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">{lesson.title}</h1>
+            <p className="text-muted-foreground">
+              {lesson.difficulty} • {lesson.duration}
+            </p>
+          </div>
+        </div>
+      </section>
 
-            {/* Lesson Content */}
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="max-w-4xl mx-auto space-y-6">
+      <div className="flex-1 flex overflow-hidden">
+
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col">
+          {/* 3D Avatar Section */}
+          <div className="h-64 bg-gradient-to-br from-primary/10 to-secondary/10 border-b">
+            <div className="h-full flex items-center justify-center">
+              <Avatar3D isSpeaking={isPlaying} />
+            </div>
+          </div>
+
+          {/* Lesson Content */}
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="max-w-4xl mx-auto space-y-6">
                 {/* Progress Indicator */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -352,20 +374,20 @@ function Counter() {
             </div>
           </div>
 
-          {/* Chat Panel */}
-          {showChat && (
-            <div className="w-80 border-l bg-card">
-              <ChatBox 
-                lessonId={lesson.id}
-                onSendMessage={handleSendMessage}
-                messages={chatMessages}
-                isLoading={isChatLoading}
-                placeholder="Ask about React Hooks..."
-              />
-            </div>
-          )}
-        </div>
+        {/* Chat Panel */}
+        {showChat && (
+          <div className="w-80 border-l bg-card">
+            <ChatBox 
+              lessonId={lesson.id}
+              onSendMessage={handleSendMessage}
+              messages={chatMessages}
+              isLoading={isChatLoading}
+              placeholder="Ask about React Hooks..."
+            />
+          </div>
+        )}
       </div>
+    </div>
     </AppLayout>
   );
 }

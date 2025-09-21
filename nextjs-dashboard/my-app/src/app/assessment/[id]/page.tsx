@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect, use } from "react";
-import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import CodeEditor from "@/components/assessment/CodeEditor";
 import ResultPanel from "@/components/assessment/ResultPanel";
@@ -12,9 +11,13 @@ import {
   IconTarget,
   IconCode,
   IconBulb,
-  IconLoader2
+  IconLoader2,
+  IconBrain,
+  IconRocket
 } from "@tabler/icons-react";
 import { ModeToggle } from "@/components/modeToggle";
+import Link from "next/link";
+import AppLayout from "@/components/layout/AppLayout";
 
 
 interface Assessment {
@@ -210,34 +213,54 @@ export default SearchableList;`,
 
   return (
     <AppLayout>
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="flex justify-between items-center p-6 border-b">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={() => window.history.back()}>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="flex justify-between items-center p-6 border-b">
+        <div className="flex items-center gap-4">
+          <Link href="/assessments">
+            <Button variant="outline" size="sm">
               <IconArrowLeft className="w-4 h-4 mr-2" />
-              Back to Course
+              Back to Assessments
             </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">{assessment.title}</h1>
-              <p className="text-muted-foreground">
-                {assessment.difficulty} • {assessment.language} • {assessment.timeLimit} min
-              </p>
+          </Link>
+          <div className="flex items-center gap-2">
+            <IconBrain className="w-6 h-6 text-primary" />
+            <h1 className="text-xl font-bold text-foreground">AI Learning Assistant</h1>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          {!isCompleted && (
+            <div className="flex items-center gap-2 px-3 py-1 bg-muted rounded-lg">
+              <IconClock className="w-4 h-4 text-muted-foreground" />
+              <span className={`font-mono text-sm ${
+                timeRemaining < 300 ? 'text-red-500' : 'text-foreground'
+              }`}>
+                {formatTime(timeRemaining)}
+              </span>
             </div>
-          </div>
-          <div className="flex items-center gap-4">
-            {!isCompleted && (
-              <div className="flex items-center gap-2 px-3 py-1 bg-muted rounded-lg">
-                <IconClock className="w-4 h-4 text-muted-foreground" />
-                <span className={`font-mono text-sm ${
-                  timeRemaining < 300 ? 'text-red-500' : 'text-foreground'
-                }`}>
-                  {formatTime(timeRemaining)}
-                </span>
+          )}
+          <ModeToggle />
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="py-8 px-6 border-b">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-6">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center">
+                <IconRocket className="w-8 h-8 text-primary-foreground" />
               </div>
-            )}
-            <ModeToggle />
+            </div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">{assessment.title}</h1>
+            <p className="text-muted-foreground">
+              {assessment.difficulty} • {assessment.language} • {assessment.timeLimit} min
+            </p>
           </div>
-        </header>
+        </div>
+      </section>
+
+      <div className="flex-1 flex flex-col overflow-hidden">
 
         <div className="flex-1 flex overflow-hidden">
           {/* Left Panel - Instructions */}
@@ -314,6 +337,7 @@ export default SearchableList;`,
           </div>
         </div>
       </div>
+    </div>
     </AppLayout>
   );
 }

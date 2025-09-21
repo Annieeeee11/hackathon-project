@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar";
-import { ModeToggle } from "@/components/modeToggle";
 import { Button } from "@/components/ui/button";
+import { ModeToggle } from "@/components/modeToggle";
 import { 
   IconBook, 
   IconBrain, 
@@ -13,7 +12,10 @@ import {
   IconTarget,
   IconCheck,
   IconX,
+  IconCode,
+  IconArrowRight
 } from "@tabler/icons-react";
+import Link from "next/link";
 import AppLayout from "@/components/layout/AppLayout";
 
 
@@ -111,17 +113,50 @@ export default function AssessmentsPage() {
   };
 
   return (
-    <AppLayout
-      title="Assessments" 
-      subtitle="Test your skills with hands-on coding challenges"
+    <AppLayout 
     >
-      <div className="space-y-6">
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="flex justify-between items-center p-6 border-b">
+        <div className="flex items-center gap-2">
+          <IconBrain className="w-8 h-8 text-primary" />
+          <h1 className="text-2xl font-bold text-foreground">AI Learning Assistant</h1>
+        </div>
+        <div className="flex items-center gap-4">
+          <ModeToggle />
+          <Link href="/chat">
+            <Button variant="outline">
+              <IconMessageCircle className="w-4 h-4 mr-2" />
+              AI Chat
+            </Button>
+          </Link>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="py-12 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center">
+                <IconCode className="w-8 h-8 text-primary-foreground" />
+              </div>
+            </div>
+            <h1 className="text-4xl font-bold text-foreground mb-4">
+              Coding
+              <span className="text-primary"> Assessments</span>
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Test your skills with hands-on coding challenges and get instant feedback on your solutions.
+            </p>
+          </div>
+
           {/* Filter */}
-          <div className="flex gap-4 items-center">
+          <div className="flex justify-center mb-8">
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              className="px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="all">All Assessments</option>
               <option value="not-started">Not Started</option>
@@ -133,10 +168,10 @@ export default function AssessmentsPage() {
           {/* Assessments Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredAssessments.map((assessment) => (
-              <div key={assessment.id} className="bg-card rounded-lg border p-6 hover:shadow-md transition-shadow">
+              <div key={assessment.id} className="bg-card rounded-lg border p-6 hover:shadow-lg transition-shadow">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-foreground mb-2">{assessment.title}</h3>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">{assessment.title}</h3>
                     <p className="text-sm text-muted-foreground mb-3">{assessment.description}</p>
                   </div>
                   <div className="flex items-center gap-1">
@@ -147,10 +182,10 @@ export default function AssessmentsPage() {
                 <div className="space-y-3">
                   {/* Status and Difficulty */}
                   <div className="flex items-center justify-between">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(assessment.status)}`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(assessment.status)}`}>
                       {assessment.status.replace("-", " ").toUpperCase()}
                     </span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(assessment.difficulty)}`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getDifficultyColor(assessment.difficulty)}`}>
                       {assessment.difficulty}
                     </span>
                   </div>
@@ -189,7 +224,6 @@ export default function AssessmentsPage() {
                       </>
                     ) : assessment.status === "in-progress" ? (
                       <>
-                      {/* play */}
                         <IconX className="w-4 h-4 mr-2" />
                         Continue
                       </>
@@ -206,15 +240,24 @@ export default function AssessmentsPage() {
           </div>
 
           {filteredAssessments.length === 0 && (
-            <div className="text-center py-12">
-              <IconTarget className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">No assessments found</h3>
-              <p className="text-muted-foreground">
-                Try adjusting your filter criteria
+            <div className="text-center py-16">
+              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <IconTarget className="w-10 h-10 text-primary" />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-4">No assessments found</h3>
+              <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                Try adjusting your filter criteria to find the assessments you're looking for.
               </p>
+              <Button size="lg" onClick={() => setFilterStatus("all")}>
+                <IconTarget className="w-4 h-4 mr-2" />
+                View All Assessments
+                <IconArrowRight className="w-4 h-4 ml-2" />
+              </Button>
             </div>
           )}
-      </div>
+        </div>
+      </section>
+    </div>
     </AppLayout>
   );
 }

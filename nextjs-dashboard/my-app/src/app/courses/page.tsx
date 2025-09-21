@@ -1,16 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
+import { ModeToggle } from "@/components/modeToggle";
 import CourseCard from "@/components/dashboard/CourseCard";
 import { 
   IconPlus,
   IconSearch,
   IconFilter,
   IconBrain,
-  IconBook
+  IconBook,
+  IconMessageCircle,
+  IconArrowRight,
+  IconRocket
 } from "@tabler/icons-react";
+import Link from "next/link";
+import AppLayout from "@/components/layout/AppLayout";
 
 
 const mockCourses = [
@@ -117,43 +122,80 @@ export default function CoursesPage() {
 
   return (
     <AppLayout 
-      title="My Courses" 
-      subtitle="Manage and track your learning progress"
     >
-        {/* Action Buttons */}
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="flex justify-between items-center p-6 border-b">
         <div className="flex items-center gap-2">
-          <Button>
-            <IconPlus className="w-4 h-4 mr-2" />
-            Generate New Course
-          </Button>
+          <IconBrain className="w-8 h-8 text-primary" />
+          <h1 className="text-2xl font-bold text-foreground">AI Learning Assistant</h1>
         </div>
+        <div className="flex items-center gap-4">
+          <ModeToggle />
+          <Link href="/chat">
+            <Button variant="outline">
+              <IconMessageCircle className="w-4 h-4 mr-2" />
+              AI Chat
+            </Button>
+          </Link>
+        </div>
+      </header>
 
-        {/* Search and Filter */}
-        <div className="flex gap-4 items-center">
-          <div className="flex-1 relative">
-            <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search courses..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+      {/* Hero Section */}
+      <section className="py-12 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-8">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center">
+                <IconBook className="w-8 h-8 text-primary-foreground" />
+              </div>
+            </div>
+            <h1 className="text-4xl font-bold text-foreground mb-4">
+              My
+              <span className="text-primary"> Courses</span>
+            </h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Manage and track your learning progress across all your personalized AI-generated courses.
+            </p>
           </div>
-          <div className="flex items-center gap-2">
-            <IconFilter className="w-4 h-4 text-muted-foreground" />
-            <select
-              value={filterDifficulty}
-              onChange={(e) => setFilterDifficulty(e.target.value)}
-              className="px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="all">All Levels</option>
-              <option value="beginner">Beginner</option>
-              <option value="intermediate">Intermediate</option>
-              <option value="advanced">Advanced</option>
-            </select>
+
+          {/* Action Buttons */}
+          <div className="flex justify-center mb-8">
+            <Link href="/generate-course">
+              <Button size="lg">
+                <IconBrain className="w-4 h-4 mr-2" />
+                Generate New Course
+                <IconArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
           </div>
-        </div>
+
+          {/* Search and Filter */}
+          <div className="flex gap-4 items-center mb-8 max-w-2xl mx-auto">
+            <div className="flex-1 relative">
+              <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search courses..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <IconFilter className="w-4 h-4 text-muted-foreground" />
+              <select
+                value={filterDifficulty}
+                onChange={(e) => setFilterDifficulty(e.target.value)}
+                className="px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="all">All Levels</option>
+                <option value="beginner">Beginner</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="advanced">Advanced</option>
+              </select>
+            </div>
+          </div>
 
           {/* Courses Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -163,21 +205,29 @@ export default function CoursesPage() {
           </div>
 
           {filteredCourses.length === 0 && (
-            <div className="text-center py-12">
-              <IconBook className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">No courses found</h3>
-              <p className="text-muted-foreground mb-4">
+            <div className="text-center py-16">
+              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <IconBook className="w-10 h-10 text-primary" />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-4">No courses found</h3>
+              <p className="text-muted-foreground mb-8 max-w-md mx-auto">
                 {searchTerm || filterDifficulty !== "all" 
-                  ? "Try adjusting your search or filter criteria"
-                  : "Start by generating your first course"
+                  ? "Try adjusting your search or filter criteria to find what you're looking for."
+                  : "Start your learning journey by generating your first personalized course with AI."
                 }
               </p>
-              <Button>
-                <IconBrain className="w-4 h-4 mr-2" />
-                Generate Your First Course
-              </Button>
+              <Link href="/generate-course">
+                <Button size="lg">
+                  <IconBrain className="w-4 h-4 mr-2" />
+                  Generate Your First Course
+                  <IconArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
             </div>
           )}
+        </div>
+      </section>
+    </div>
     </AppLayout>
   );
 }
