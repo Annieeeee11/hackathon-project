@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-// import { openai } from "@/lib/openaiClient";
-// import { supabase } from "@/lib/supabaseClient";
+import { openai } from "@/lib/openaiClient";
+import { supabase } from "@/lib/supabaseClient";
 
 export async function POST(req: Request) {
   try {
@@ -10,16 +10,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "At least one tag is required" }, { status: 400 });
     }
 
-    // Mock course generation (replace with OpenAI integration)
-    const course = {
-      id: `course_${Date.now()}`,
-      title: `Complete ${tags.join(" & ")} Mastery Course`,
-      description: `A comprehensive course covering ${tags.join(", ")} with hands-on projects and real-world applications. Learn from our AI Professor with interactive lessons and assessments.`,
-      tags: tags,
-      estimatedDuration: "4-6 weeks",
-      difficulty: tags.length > 3 ? "Advanced" : tags.length > 1 ? "Intermediate" : "Beginner",
-      lessons: generateLessons(tags),
-    };
+    // Generate course using OpenAI
+    const course = await generateCourseWithAI(tags);
+
+    // Optionally save to Supabase
+    // const { data, error } = await supabase
+    //   .from('courses')
+    //   .insert(course)
+    //   .select();
 
     return NextResponse.json({ success: true, course });
   } catch (error) {
@@ -28,7 +26,88 @@ export async function POST(req: Request) {
   }
 }
 
-function generateLessons(tags: string[]) {
+async function generateCourseWithAI(tags: string[]) {
+  const prompt = `Create a comprehensive learning course for the following skills/topics: ${tags.join(", ")}.
+
+Please generate a course with the following structure:
+- Course title
+- Course description (2-3 sentences)
+- Estimated duration
+- Difficulty level (Beginner/Intermediate/Advanced)
+- 5-7 detailed lessons with titles, descriptions, durations, and difficulty levels
+
+Make the course practical, engaging, and suitable for someone wanting to learn these skills. Each lesson should build upon the previous one.
+
+Return the response in the following JSON format:
+{
+  "title": "Course Title",
+  "description": "Course description",
+  "estimatedDuration": "X weeks",
+  "difficulty": "Beginner/Intermediate/Advanced",
+  "lessons": [
+    {
+      "title": "Lesson Title",
+      "content": "Lesson description",
+      "duration": "X min",
+      "difficulty": "Beginner/Intermediate/Advanced"
+    }
+  ]
+}`;
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content: "You are an expert course creator and educational content designer. Create comprehensive, practical courses that help students learn effectively."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 2000,
+    });
+
+    const aiResponse = completion.choices[0]?.message?.content;
+    if (!aiResponse) {
+      throw new Error("No response from OpenAI");
+    }
+
+    // Parse the JSON response
+    const courseData = JSON.parse(aiResponse);
+    
+    // Add additional metadata
+    const course = {
+      id: `course_${Date.now()}`,
+      ...courseData,
+      tags: tags,
+      lessons: courseData.lessons.map((lesson: any, index: number) => ({
+        id: `lesson_${index + 1}`,
+        ...lesson
+      }))
+    };
+
+    return course;
+  } catch (error) {
+    console.error("Error generating course with AI:", error);
+    
+    // Fallback to basic course generation if AI fails
+    return {
+      id: `course_${Date.now()}`,
+      title: `Complete ${tags.join(" & ")} Mastery Course`,
+      description: `A comprehensive course covering ${tags.join(", ")} with hands-on projects and real-world applications. Learn from our AI Professor with interactive lessons and assessments.`,
+      tags: tags,
+      estimatedDuration: "4-6 weeks",
+      difficulty: tags.length > 3 ? "Advanced" : tags.length > 1 ? "Intermediate" : "Beginner",
+      lessons: generateFallbackLessons(tags),
+    };
+  }
+}
+
+function generateFallbackLessons(tags: string[]) {
   const lessons = [];
   const baseLessons = [
     {
