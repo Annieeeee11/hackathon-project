@@ -55,6 +55,8 @@ export default function LessonPage({ params }: LessonPageProps) {
   const [showChat, setShowChat] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [avatarEmotion, setAvatarEmotion] = useState<'neutral' | 'happy' | 'thinking' | 'explaining'>('neutral');
+  const [currentAvatarMessage, setCurrentAvatarMessage] = useState("");
 
   // Mock lesson data
   useEffect(() => {
@@ -94,7 +96,31 @@ function Counter() {
   }, [id]);
 
   const handlePlayPause = () => {
-    setIsPlaying(!isPlaying);
+    const newPlayingState = !isPlaying;
+    setIsPlaying(newPlayingState);
+    
+    if (newPlayingState) {
+      // Start teaching
+      setAvatarEmotion('explaining');
+      setCurrentAvatarMessage(lesson?.explanation || "Let me explain this concept...");
+      
+      // Simulate lesson progression
+      setTimeout(() => {
+        setAvatarEmotion('happy');
+        setCurrentAvatarMessage("Great! You're doing well!");
+      }, 5000);
+      
+      setTimeout(() => {
+        setAvatarEmotion('neutral');
+        setCurrentAvatarMessage("");
+        setIsPlaying(false);
+      }, 8000);
+    } else {
+      // Stop teaching
+      setAvatarEmotion('neutral');
+      setCurrentAvatarMessage("");
+    }
+    
     // Here you would integrate with TTS API
   };
 
@@ -170,9 +196,15 @@ function Counter() {
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col">
             {/* 3D Avatar Section */}
-            <div className="h-64 bg-gradient-to-br from-primary/10 to-secondary/10 border-b">
-              <div className="h-full flex items-center justify-center">
-                <Avatar3D isSpeaking={isPlaying} />
+            <div className="h-80 bg-gradient-to-br from-primary/10 to-secondary/10 border-b">
+              <div className="h-full">
+                <Avatar3D 
+                  isSpeaking={isPlaying}
+                  currentMessage={currentAvatarMessage}
+                  emotion={avatarEmotion}
+                  showControls={true}
+                  className="h-full"
+                />
               </div>
             </div>
 
