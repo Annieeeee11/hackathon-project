@@ -9,21 +9,13 @@ import {
   IconBrain, 
   IconDashboard, 
   IconMessageCircle, 
-  IconTrophy,
   IconClock,
   IconTarget,
   IconCheck,
   IconX,
 } from "@tabler/icons-react";
+import AppLayout from "@/components/layout/AppLayout";
 
-const sidebarLinks = [
-  { label: "Dashboard", href: "/dashboard", icon: <IconDashboard className="w-5 h-5" /> },
-  { label: "Generate Course", href: "/", icon: <IconBrain className="w-5 h-5" /> },
-  { label: "My Courses", href: "/courses", icon: <IconBook className="w-5 h-5" /> },
-  { label: "Assessments", href: "/assessments", icon: <IconBook className="w-5 h-5" /> },
-  { label: "Chat with AI", href: "/chat", icon: <IconMessageCircle className="w-5 h-5" /> },
-  { label: "Leaderboard", href: "/leaderboard", icon: <IconTrophy className="w-5 h-5" /> },
-];
 
 interface Assessment {
   id: string;
@@ -119,25 +111,11 @@ export default function AssessmentsPage() {
   };
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar>
-        <SidebarBody className="flex flex-col gap-2 p-4">
-          {sidebarLinks.map((link) => (
-            <SidebarLink key={link.href} link={link} />
-          ))}
-        </SidebarBody>
-      </Sidebar>
-
-      <main className="flex-1 overflow-y-auto">
-        <header className="flex justify-between items-center p-6 border-b">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Assessments</h1>
-            <p className="text-muted-foreground mt-1">Test your skills with hands-on coding challenges</p>
-          </div>
-          <ModeToggle />
-        </header>
-
-        <div className="p-6 space-y-6">
+    <AppLayout
+      title="Assessments" 
+      subtitle="Test your skills with hands-on coding challenges"
+    >
+      <div className="space-y-6">
           {/* Filter */}
           <div className="flex gap-4 items-center">
             <select
@@ -236,8 +214,7 @@ export default function AssessmentsPage() {
               </p>
             </div>
           )}
-        </div>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 }

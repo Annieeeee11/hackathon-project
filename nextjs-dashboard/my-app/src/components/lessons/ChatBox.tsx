@@ -1,28 +1,41 @@
-"use client"
-import { useState, useRef, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { IconSend, IconBrain, IconUser, IconLoader2 } from "@tabler/icons-react"
+'use client'
+import { useState, useRef, useEffect } from 'react'
 
-interface Message {
-  id: string
-  role: "user" | "ai"
-  text: string
-  timestamp: Date
-  isTyping?: boolean
+// TypeScript declaration for Speech Recognition API
+declare global {
+  interface Window {
+    webkitSpeechRecognition: any;
+    SpeechRecognition: any;
+  }
 }
 
-export default function ChatBox({ lessonId }: { lessonId: string }) {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      role: "ai",
-      text: "Hello! I'm your AI Professor. I'm here to help you understand this lesson better. Feel free to ask me any questions!",
-      timestamp: new Date()
-    }
-  ])
-  const [input, setInput] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+interface Message {
+  id: string;
+  sender: 'user' | 'ai';
+  content: string;
+  timestamp: Date;
+  code?: string;
+}
+
+interface ChatBoxProps {
+  onSendMessage?: (message: string) => Promise<void>;
+  isLoading?: boolean;
+  messages?: Message[];
+  placeholder?: string;
+  lessonId?: string;
+}
+
+export default function ChatBox({ 
+  onSendMessage, 
+  isLoading = false,
+  messages = [],
+  placeholder = "Ask your AI professor anything...",
+  lessonId
+}: ChatBoxProps) {
+  const [message, setMessage] = useState('')
+  const [isListening, setIsListening] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const recognitionRef = useRef<any>(null)
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -32,118 +45,112 @@ export default function ChatBox({ lessonId }: { lessonId: string }) {
     scrollToBottom()
   }, [messages])
 
-  const sendMessage = async () => {
-    if (!input.trim() || isLoading) return
+  // Initialize speech recognition
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
+      const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition
+      recognitionRef.current = new SpeechRecognition()
+      recognitionRef.current.continuous = false
+      recognitionRef.current.interimResults = false
+      recognitionRef.current.lang = 'en-US'
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      text: input.trim(),
-      timestamp: new Date()
-    }
-
-    setMessages(prev => [...prev, userMessage])
-    setInput("")
-    setIsLoading(true)
-
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "ai",
-        text: generateAIResponse(input.trim(), lessonId),
-        timestamp: new Date()
+      recognitionRef.current.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript
+        setMessage(transcript)
+        setIsListening(false)
       }
-      setMessages(prev => [...prev, aiResponse])
-      setIsLoading(false)
-    }, 1500)
+
+      recognitionRef.current.onerror = () => {
+        setIsListening(false)
+      }
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false)
+      }
+    }
+  }, [])
+
+  const startListening = () => {
+    if (recognitionRef.current && !isListening) {
+      setIsListening(true)
+      recognitionRef.current.start()
+    }
   }
 
-  const generateAIResponse = (question: string, lessonId: string): string => {
-    const responses = [
-      "Great question! Let me explain that concept in more detail...",
-      "That's an excellent point! Here's how it works:",
-      "I'm glad you asked! This is a common area of confusion. Let me clarify:",
-      "Perfect timing for that question! Here's what you need to know:",
-      "That's a key concept! Let me break it down for you:"
-    ]
-    
-    const randomResponse = responses[Math.floor(Math.random() * responses.length)]
-    
-    if (question.toLowerCase().includes("code") || question.toLowerCase().includes("example")) {
-      return `${randomResponse} Here's a code example that demonstrates this concept:\n\n\`\`\`javascript\n// Example code here\nconst example = "This shows the concept";\n\`\`\`\n\nThis example shows how the concept works in practice.`
+  const stopListening = () => {
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop()
+      setIsListening(false)
     }
-    
-    if (question.toLowerCase().includes("difficult") || question.toLowerCase().includes("confused")) {
-      return `${randomResponse} Don't worry, this is a challenging topic! Let me explain it step by step:\n\n1. First, understand the basic concept\n2. Then, see how it applies in practice\n3. Finally, practice with examples\n\nWould you like me to go through any of these steps in more detail?`
-    }
-    
-    return `${randomResponse} In the context of lesson ${lessonId}, this relates to the core concepts we're covering. The key thing to remember is that understanding comes with practice. Would you like me to provide a specific example or explain any particular aspect in more detail?`
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!message.trim() || isLoading) return
+
+    const userMessage = message.trim()
+    setMessage('')
+    
+    if (onSendMessage) {
+      await onSendMessage(userMessage)
     }
   }
 
   return (
-    <div className="flex flex-col h-full bg-card">
+    <div className="flex flex-col h-96 bg-white rounded-lg shadow-lg border">
       {/* Header */}
-      <div className="p-4 border-b bg-muted/50">
-        <div className="flex items-center gap-2">
-          <IconBrain className="w-5 h-5 text-primary" />
-          <h3 className="font-semibold text-foreground">AI Professor Chat</h3>
-        </div>
-        <p className="text-xs text-muted-foreground mt-1">
-          Ask questions about this lesson
-        </p>
+      <div className="px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-lg">
+        <h3 className="font-semibold flex items-center">
+          <span className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
+          AI Professor Chat
+        </h3>
       </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
-          >
-            {message.role === "ai" && (
-              <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center flex-shrink-0">
-                <IconBrain className="w-4 h-4" />
-              </div>
-            )}
-            
-            <div
-              className={`max-w-[80%] rounded-lg p-3 ${
-                message.role === "user"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-foreground"
-              }`}
-            >
-              <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-              <p className="text-xs opacity-70 mt-1">
-                {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </p>
-            </div>
-            
-            {message.role === "user" && (
-              <div className="w-8 h-8 bg-secondary text-secondary-foreground rounded-full flex items-center justify-center flex-shrink-0">
-                <IconUser className="w-4 h-4" />
-              </div>
-            )}
+        {messages.length === 0 ? (
+          <div className="text-center text-gray-500 mt-8">
+            <div className="text-4xl mb-2">🎓</div>
+            <p>Ask me anything about the lesson!</p>
+            <p className="text-sm">I can explain concepts, provide examples, or help debug code.</p>
           </div>
-        ))}
+        ) : (
+          messages.map((msg, index) => (
+            <div
+              key={index}
+              className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div
+                className={`max-w-[80%] px-4 py-2 rounded-lg ${
+                  msg.sender === 'user'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-100 text-gray-800'
+                }`}
+              >
+                {msg.sender === 'ai' && (
+                  <div className="flex items-center mb-1">
+                    <span className="text-xl mr-2">🤖</span>
+                    <span className="text-xs font-semibold text-blue-600">AI Professor</span>
+                  </div>
+                )}
+                <div className="whitespace-pre-wrap">{msg.content}</div>
+                {msg.code && (
+                  <div className="mt-2 p-3 bg-gray-900 text-green-400 rounded text-sm font-mono overflow-x-auto">
+                    <pre>{msg.code}</pre>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))
+        )}
         
         {isLoading && (
-          <div className="flex gap-3 justify-start">
-            <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center flex-shrink-0">
-              <IconBrain className="w-4 h-4" />
-            </div>
-            <div className="bg-muted text-foreground rounded-lg p-3">
-              <div className="flex items-center gap-2">
-                <IconLoader2 className="w-4 h-4 animate-spin" />
-                <span className="text-sm">AI Professor is thinking...</span>
+          <div className="flex justify-start">
+            <div className="bg-gray-100 text-gray-800 px-4 py-2 rounded-lg max-w-[80%]">
+              <div className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
               </div>
             </div>
           </div>
@@ -153,29 +160,44 @@ export default function ChatBox({ lessonId }: { lessonId: string }) {
       </div>
 
       {/* Input */}
-      <div className="p-4 border-t">
-        <div className="flex gap-2">
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Ask a question about this lesson..."
-            className="flex-1 min-h-[40px] max-h-32 px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-            rows={1}
+      <form onSubmit={handleSubmit} className="p-4 border-t">
+        <div className="flex space-x-2">
+          <input
+            type="text"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder={placeholder}
+            disabled={isLoading}
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
           />
-          <Button
-            onClick={sendMessage}
-            disabled={!input.trim() || isLoading}
-            size="sm"
-            className="px-3"
+          <button
+            type="button"
+            onClick={isListening ? stopListening : startListening}
+            disabled={isLoading}
+            className={`px-3 py-2 rounded-lg transition-colors ${
+              isListening 
+                ? 'bg-red-500 hover:bg-red-600 text-white' 
+                : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+            } disabled:bg-gray-100 disabled:cursor-not-allowed`}
+            title={isListening ? 'Stop listening' : 'Start voice input'}
           >
-            <IconSend className="w-4 h-4" />
-          </Button>
+            {isListening ? '🎤' : '🎙️'}
+          </button>
+          <button
+            type="submit"
+            disabled={!message.trim() || isLoading}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+          >
+            Send
+          </button>
         </div>
-        <p className="text-xs text-muted-foreground mt-2">
-          Press Enter to send, Shift+Enter for new line
-        </p>
-      </div>
+        {isListening && (
+          <div className="mt-2 text-sm text-red-600 flex items-center">
+            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2"></div>
+            Listening... Speak now
+          </div>
+        )}
+      </form>
     </div>
   )
 }

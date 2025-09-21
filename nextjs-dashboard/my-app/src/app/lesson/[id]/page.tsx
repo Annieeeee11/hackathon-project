@@ -1,34 +1,23 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
-import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar";
-import { ModeToggle } from "@/components/modeToggle";
+import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import Avatar3D from "@/components/lessons/Avatar3D";
 import ChatBox from "@/components/lessons/ChatBox";
 import { 
-  IconBook, 
-  IconBrain, 
-  IconDashboard,  
-  IconMessageCircle, 
-  IconTrophy,
   IconVolume,
   IconVolumeOff,
   IconArrowLeft,
   IconArrowRight,
   IconCheck,
   IconCode,
-  IconBulb
+  IconBulb,
+  IconMessageCircle,
+  IconBook
 } from "@tabler/icons-react";
+import { ModeToggle } from "@/components/modeToggle";
 
-const sidebarLinks = [
-  { label: "Dashboard", href: "/dashboard", icon: <IconDashboard className="w-5 h-5" /> },
-  { label: "Generate Course", href: "/", icon: <IconBrain className="w-5 h-5" /> },
-  { label: "My Courses", href: "/courses", icon: <IconBook className="w-5 h-5" /> },
-  { label: "Assessments", href: "/assessments", icon: <IconBook className="w-5 h-5" /> },
-  { label: "Chat with AI", href: "/chat", icon: <IconMessageCircle className="w-5 h-5" /> },
-  { label: "Leaderboard", href: "/leaderboard", icon: <IconTrophy className="w-5 h-5" /> },
-];
 
 interface Lesson {
   id: string;
@@ -55,6 +44,69 @@ export default function LessonPage({ params }: LessonPageProps) {
   const [showChat, setShowChat] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [isChatLoading, setIsChatLoading] = useState(false);
+
+  // Chat handler
+  const handleSendMessage = async (message: string) => {
+    if (!lesson) return;
+
+    const userMessage = {
+      id: Date.now().toString(),
+      sender: 'user' as const,
+      content: message,
+      timestamp: new Date()
+    };
+
+    setChatMessages(prev => [...prev, userMessage]);
+    setIsChatLoading(true);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          question: message,
+          lessonId: lesson.id,
+          courseId: 'general',
+          userId: 'demo-user' // You might want to get this from auth context
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        const aiMessage = {
+          id: (Date.now() + 1).toString(),
+          sender: 'ai' as const,
+          content: data.answer,
+          timestamp: new Date()
+        };
+        setChatMessages(prev => [...prev, aiMessage]);
+      } else {
+        const errorMessage = {
+          id: (Date.now() + 1).toString(),
+          sender: 'ai' as const,
+          content: "I'm having trouble processing your question. Please try again.",
+          timestamp: new Date()
+        };
+        setChatMessages(prev => [...prev, errorMessage]);
+      }
+    } catch (error) {
+      console.error('Chat error:', error);
+      const errorMessage = {
+        id: (Date.now() + 1).toString(),
+        sender: 'ai' as const,
+        content: "I'm having trouble connecting right now. Please try again!",
+        timestamp: new Date()
+      };
+      setChatMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
 
   // Mock lesson data
   useEffect(() => {
@@ -130,16 +182,8 @@ function Counter() {
   }
 
   return (
-    <div className="flex h-screen bg-background">
-      <Sidebar>
-        <SidebarBody className="flex flex-col gap-2 p-4">
-          {sidebarLinks.map((link) => (
-            <SidebarLink key={link.href} link={link} />
-          ))}
-        </SidebarBody>
-      </Sidebar>
-
-      <main className="flex-1 flex flex-col overflow-hidden">
+    <AppLayout>
+      <div className="flex-1 flex flex-col overflow-hidden">
         <header className="flex justify-between items-center p-6 border-b">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="sm" onClick={() => window.history.back()}>
@@ -311,11 +355,17 @@ function Counter() {
           {/* Chat Panel */}
           {showChat && (
             <div className="w-80 border-l bg-card">
-              <ChatBox lessonId={lesson.id} />
+              <ChatBox 
+                lessonId={lesson.id}
+                onSendMessage={handleSendMessage}
+                messages={chatMessages}
+                isLoading={isChatLoading}
+                placeholder="Ask about React Hooks..."
+              />
             </div>
           )}
         </div>
-      </main>
-    </div>
+      </div>
+    </AppLayout>
   );
 }
