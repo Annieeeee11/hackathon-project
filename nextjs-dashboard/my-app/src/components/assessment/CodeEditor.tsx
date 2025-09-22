@@ -79,7 +79,7 @@ export default function CodeEditor({
         </div>
       </div>
 
-      {/* Editor */}
+
       <div className="flex-1">
         <Editor
           height="100%"

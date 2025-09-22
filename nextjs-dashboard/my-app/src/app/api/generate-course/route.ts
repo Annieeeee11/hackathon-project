@@ -20,31 +20,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generate course using OpenAI
     console.log('Generating course with tags:', tags)
     const courseData = await generateCourseWithAI(tags)
     console.log('Generated course data:', courseData)
 
-    // Calculate estimated hours and lesson count
     const totalLessons = courseData.lessons?.length || 0
     const estimatedHours = totalLessons * 0.5 // Assume 30 min per lesson
 
-    // For now, just return the course data without saving to database
-    // This will help us debug the AI generation first
     return NextResponse.json({
       success: true,
       course: courseData
     })
 
-    // Create course enrollment for the user
     try {
       await dbHelpers.enrollInCourse(userId, courseData.id)
     } catch (enrollError) {
       console.error('Enrollment error:', enrollError)
-      // Continue even if enrollment fails
     }
 
-    // Create lessons in the database
     if (courseData.lessons && courseData.lessons.length > 0) {
       const lessonInserts = courseData.lessons.map((lesson: any, index: number) => ({
         course_id: courseData.id,
@@ -63,11 +56,9 @@ export async function POST(request: NextRequest) {
 
       if (lessonsError) {
         console.error('Lessons creation error:', lessonsError)
-        // Continue even if lessons creation fails
       }
     }
 
-    // Log learning analytics
     try {
       await dbHelpers.logLearningSession(userId, courseData.id, {
         session_duration: 5, // Course generation time
@@ -75,7 +66,6 @@ export async function POST(request: NextRequest) {
       })
     } catch (analyticsError) {
       console.error('Analytics error:', analyticsError)
-      // Continue even if analytics logging fails
     }
 
     return NextResponse.json({
@@ -151,11 +141,9 @@ Return the response in the following JSON format:
     }
 
     console.log('AI Response received:', aiResponse)
-    // Parse the JSON response
     const courseData = JSON.parse(aiResponse);
     console.log('Parsed course data:', courseData)
     
-    // Add additional metadata
     const course = {
       id: `course_${Date.now()}`,
       ...courseData,
@@ -171,7 +159,6 @@ Return the response in the following JSON format:
     console.error("Error generating course with AI:", error);
     console.error("Error details:", error instanceof Error ? error.message : String(error));
     
-    // Fallback to basic course generation if AI fails
     console.log('Using fallback course generation')
     return {
       id: `course_${Date.now()}`,
@@ -220,7 +207,6 @@ function generateFallbackLessons(tags: string[]) {
     },
   ];
 
-  // Generate lessons based on tags
   tags.forEach((tag, index) => {
     lessons.push({
       id: `lesson_${index + 1}`,
@@ -231,7 +217,6 @@ function generateFallbackLessons(tags: string[]) {
     });
   });
 
-  // Add project-based lessons
   lessons.push({
     id: `lesson_${lessons.length + 1}`,
     title: "Capstone Project",

@@ -57,8 +57,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // This endpoint just validates the text for TTS
-    // Actual speech synthesis happens on the client side
     const cleanedText = text
       .replace(/\*\*(.*?)\*\*/g, '$1')
       .replace(/\*(.*?)\*/g, '$1')

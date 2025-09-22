@@ -46,7 +46,6 @@ export default function LessonPage({ params }: LessonPageProps) {
   const [avatarEmotion, setAvatarEmotion] = useState<'neutral' | 'happy' | 'thinking' | 'explaining'>('neutral');
   const [currentAvatarMessage, setCurrentAvatarMessage] = useState("");
 
-  // Mock lesson data
   useEffect(() => {
     const mockLesson: Lesson = {
       id: id,
@@ -329,7 +328,6 @@ function Counter() {
               </div>
             </div>
 
-            {/* Chat Panel */}
             {showChat && (
               <div className="w-80 border-l bg-card">
                 <ChatBox lessonId={lesson.id} />

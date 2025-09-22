@@ -116,7 +116,7 @@ export default function AssessmentsPage() {
     <AppLayout 
     >
     <div className="min-h-screen bg-background">
-      {/* Header */}
+
       <header className="flex justify-between items-center p-6 border-b">
         <div className="flex items-center gap-2">
           <IconBrain className="w-8 h-8 text-primary" />
@@ -133,7 +133,6 @@ export default function AssessmentsPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
       <section className="py-12 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-8">
@@ -151,7 +150,6 @@ export default function AssessmentsPage() {
             </p>
           </div>
 
-          {/* Filter */}
           <div className="flex justify-center mb-8">
             <select
               value={filterStatus}
@@ -165,7 +163,6 @@ export default function AssessmentsPage() {
             </select>
           </div>
 
-          {/* Assessments Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredAssessments.map((assessment) => (
               <div key={assessment.id} className="bg-white dark:bg-white rounded-lg border border-gray-200 dark:border-gray-300 p-6 hover:shadow-lg transition-shadow">
@@ -180,7 +177,7 @@ export default function AssessmentsPage() {
                 </div>
 
                 <div className="space-y-3">
-                  {/* Status and Difficulty */}
+
                   <div className="flex items-center justify-between">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(assessment.status)}`}>
                       {assessment.status.replace("-", " ").toUpperCase()}
@@ -190,13 +187,11 @@ export default function AssessmentsPage() {
                     </span>
                   </div>
 
-                  {/* Time Limit */}
                   <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-600">
                     <IconClock className="w-4 h-4" />
                     <span>{assessment.timeLimit} minutes</span>
                   </div>
 
-                  {/* Score (if completed) */}
                   {assessment.status === "completed" && assessment.score && (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600 dark:text-gray-600">Score:</span>
@@ -204,14 +199,12 @@ export default function AssessmentsPage() {
                     </div>
                   )}
 
-                  {/* Completed Date */}
                   {assessment.status === "completed" && assessment.completedAt && (
                     <div className="text-xs text-gray-500 dark:text-gray-500">
                       Completed {assessment.completedAt}
                     </div>
                   )}
 
-                  {/* Action Button */}
                   <Button 
                     className="w-full mt-4" 
                     size="sm"

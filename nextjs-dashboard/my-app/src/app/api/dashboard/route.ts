@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    // Mock dashboard data (replace with Supabase fetch)
     const dashboardData = {
       user: { id: "user_123", name: "Student" },
       courses: [

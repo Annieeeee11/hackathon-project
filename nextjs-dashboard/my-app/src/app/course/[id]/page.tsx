@@ -47,7 +47,6 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
   const [isAvatarSpeaking, setIsAvatarSpeaking] = useState(false);
   const [currentSpeakingText, setCurrentSpeakingText] = useState("");
 
-  // Fetch course data
   useEffect(() => {
     const fetchCourse = async () => {
       try {
@@ -67,7 +66,6 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
 
         setCourse(courseData);
         
-        // Set first lesson as current if available
         if (courseData.lessons && courseData.lessons.length > 0) {
           setCurrentLesson(courseData.lessons[0]);
         }
@@ -81,7 +79,6 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
     fetchCourse();
   }, [id]);
 
-  // Handle chat messages
   const handleSendMessage = async (message: string) => {
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -103,7 +100,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
           question: message,
           lessonId: currentLesson?.id,
           courseId: id,
-          userId: 'demo-user' // You can implement proper user authentication
+          userId: 'demo-user'
         }),
       });
 
@@ -119,7 +116,6 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
 
         setMessages(prev => [...prev, aiMessage]);
         
-        // Make avatar speak the response
         setCurrentSpeakingText(data.answer);
         setIsAvatarSpeaking(true);
       }
@@ -137,13 +133,11 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
     }
   };
 
-  // Handle avatar speaking completion
   const handleSpeakingComplete = () => {
     setIsAvatarSpeaking(false);
     setCurrentSpeakingText("");
   };
 
-  // Start lesson with avatar
   const startLesson = () => {
     if (currentLesson) {
       const lessonIntro = `Welcome to ${currentLesson.title}. ${currentLesson.content.substring(0, 200)}...`;
@@ -152,7 +146,6 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
     }
   };
 
-  // Quick question suggestions
   const quickQuestions = [
     "Can you explain this concept in simpler terms?",
     "Can you give me a practical example?",
@@ -297,7 +290,6 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
               </div>
             </div>
 
-            {/* Lessons List */}
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h3 className="text-lg font-semibold mb-4">Lessons</h3>
               <div className="space-y-2">

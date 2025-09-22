@@ -97,7 +97,6 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
       <section className="py-20 px-6 text-center">
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-center mb-6">
@@ -127,7 +126,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Stats Section */}
       <section className="py-16 px-6 bg-muted/50">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
@@ -141,7 +139,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Features Section */}
       <section className="py-20 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
@@ -197,7 +194,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CTA Section */}
       <section className="py-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-foreground mb-4">

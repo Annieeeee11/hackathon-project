@@ -20,7 +20,6 @@ interface Message {
   timestamp: Date;
 }
 
-// Utility function to format time consistently for SSR
 const formatTime = (date: Date): string => {
   const hours = date.getHours();
   const minutes = date.getMinutes();
@@ -46,7 +45,7 @@ export default function ChatPage() {
   const [isClient, setIsClient] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Ensure we're on the client side to prevent hydration issues
+
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -74,12 +73,10 @@ export default function ChatPage() {
     setInput("");
     setIsLoading(true);
     
-    // Set avatar to thinking state
     setAvatarEmotion('thinking');
     setCurrentAvatarMessage("Processing your question...");
 
     try {
-      // Call the AI chat API
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -104,13 +101,11 @@ export default function ChatPage() {
         timestamp: new Date()
       };
 
-      // Set avatar to explaining state with the response
       setAvatarEmotion('explaining');
       setCurrentAvatarMessage(aiResponse.text);
       
       setMessages(prev => [...prev, aiResponse]);
       
-      // After 3 seconds, set avatar back to neutral
       setTimeout(() => {
         setAvatarEmotion('neutral');
         setCurrentAvatarMessage("");
@@ -126,7 +121,6 @@ export default function ChatPage() {
       };
       setMessages(prev => [...prev, errorMessage]);
       
-      // Set avatar to neutral on error
       setAvatarEmotion('neutral');
       setCurrentAvatarMessage("");
     } finally {
@@ -145,7 +139,7 @@ export default function ChatPage() {
   return (
     <AppLayout>
     <div className="flex h-screen bg-background">
-        {/* 3D Avatar Section */}
+
         <div className="w-1/3 border-r bg-card/50">
           <div className="h-full flex flex-col">
             <div className="p-4 border-b">
@@ -161,7 +155,7 @@ export default function ChatPage() {
                 className="h-full"
                 enableVoice={true}
                 onSpeakingChange={(speaking) => {
-                  // Update UI based on actual speech state
+
                   if (speaking && avatarEmotion !== 'explaining') {
                     setAvatarEmotion('explaining');
                   }
@@ -171,7 +165,6 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Chat Section */}
         <div className="flex-1 flex flex-col">
           <header className="flex justify-between items-center p-6 border-b">
             <div>
@@ -181,7 +174,6 @@ export default function ChatPage() {
             <ModeToggle />
           </header>
 
-          {/* Chat Messages */}
           <div className="flex-1 overflow-y-auto p-6">
           <div className="max-w-4xl mx-auto space-y-6">
             {messages.map((message) => (
@@ -234,7 +226,6 @@ export default function ChatPage() {
           </div>
         </div>
 
-          {/* Input */}
           <div className="p-6 border-t bg-card">
             <div className="max-w-4xl mx-auto">
               <div className="flex gap-3">

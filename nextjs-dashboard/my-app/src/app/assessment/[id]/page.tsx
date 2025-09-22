@@ -67,7 +67,6 @@ export default function AssessmentPage({ params }: AssessmentPageProps) {
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
 
-  // Mock assessment data
   useEffect(() => {
     const mockAssessment: Assessment = {
       id: id,
@@ -118,7 +117,6 @@ export default SearchableList;`,
     setTimeRemaining(mockAssessment.timeLimit * 60); // Convert to seconds
   }, [id]);
 
-  // Timer countdown
   useEffect(() => {
     if (timeRemaining > 0 && !isCompleted) {
       const timer = setTimeout(() => {
@@ -214,7 +212,7 @@ export default SearchableList;`,
   return (
     <AppLayout>
     <div className="min-h-screen bg-background">
-      {/* Header */}
+
       <header className="flex justify-between items-center p-6 border-b">
         <div className="flex items-center gap-4">
           <Link href="/assessments">
@@ -243,7 +241,6 @@ export default SearchableList;`,
         </div>
       </header>
 
-      {/* Hero Section */}
       <section className="py-8 px-6 border-b">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-6">
@@ -263,7 +260,7 @@ export default SearchableList;`,
       <div className="flex-1 flex flex-col overflow-hidden">
 
         <div className="flex-1 flex overflow-hidden">
-          {/* Left Panel - Instructions */}
+
           <div className="w-1/3 border-r bg-card overflow-y-auto">
             <div className="p-6 space-y-6">
               <div>
@@ -314,7 +311,6 @@ export default SearchableList;`,
             </div>
           </div>
 
-          {/* Right Panel - Code Editor and Results */}
           <div className="flex-1 flex flex-col">
             <div className="flex-1 flex">
               <div className="flex-1">

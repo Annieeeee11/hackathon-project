@@ -3,7 +3,6 @@ import { openai } from '@/lib/openaiClient';
 
 export async function GET() {
   try {
-    // Test OpenAI connection with a simple completion
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [

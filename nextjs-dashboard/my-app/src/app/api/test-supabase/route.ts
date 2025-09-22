@@ -3,7 +3,6 @@ import { supabase } from '@/lib/supabaseClient';
 
 export async function GET() {
   try {
-    // Test the connection by trying to fetch from a system table
     const { data, error } = await supabase
       .from('information_schema.tables')
       .select('table_name')

@@ -12,7 +12,6 @@ export async function POST(req: Request) {
     }
 
     try {
-      // Get lesson content for context from database
       let lessonContent = "General programming concepts.";
       
       if (lessonId && lessonId !== 'general') {
@@ -31,10 +30,8 @@ export async function POST(req: Request) {
         }
       }
       
-      // Generate AI response using OpenAI
       const answer = await generateAIAnswer(question, lessonId, lessonContent);
 
-      // Save chat interaction to database if user is authenticated
       if (userId && userId !== 'demo-user') {
         try {
           await dbHelpers.saveChatInteraction(
@@ -46,14 +43,12 @@ export async function POST(req: Request) {
           );
         } catch (dbError) {
           console.error("Error saving chat interaction:", dbError);
-          // Continue even if saving fails
         }
       }
 
       return NextResponse.json({ success: true, answer });
     } catch (openaiError) {
       console.error("OpenAI error:", openaiError);
-      // Fallback response if OpenAI fails
       const fallbackAnswer = `I'm having trouble processing your question right now. Please try rephrasing it or ask about a specific programming concept.`;
       return NextResponse.json({ success: true, answer: fallbackAnswer });
     }
@@ -105,7 +100,6 @@ ${context ? `Additional context: ${context}` : ''}`;
   } catch (error) {
     console.error("Error generating AI answer:", error);
     
-    // Fallback response if AI fails
     return `I understand you're asking about "${question}". While I'm having trouble accessing my full knowledge base right now, I'd be happy to help you learn more about this topic. Could you provide a bit more context about what specific aspect you'd like to understand better?`;
   }
 }

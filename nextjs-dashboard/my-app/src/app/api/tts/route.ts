@@ -12,14 +12,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generate speech using OpenAI TTS
     const ttsResult = await textToSpeech(text, {
       voice: voice as any,
       speed: speed,
       format: format as any
     })
 
-    // Return the audio buffer as a response
     return new NextResponse(ttsResult.audioBuffer as any, {
       headers: {
         'Content-Type': `audio/${format}`,

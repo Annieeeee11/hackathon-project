@@ -48,9 +48,7 @@ export default function AuthPage() {
         if (error) throw error;
 
         if (data.user) {
-          // Check if email confirmation is required
           if (data.user.email_confirmed_at) {
-            // Email is confirmed, create profile and redirect
             await supabase.from('profiles').insert({
               id: data.user.id,
               email: data.user.email,
@@ -60,7 +58,6 @@ export default function AuthPage() {
             });
             router.push("/dashboard");
           } else {
-            // Email confirmation required
             setError("Please check your email and click the confirmation link before signing in.");
           }
         }
@@ -74,7 +71,7 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
+
       <header className="flex justify-between items-center p-6 border-b">
         <div className="flex items-center gap-2">
           <IconBrain className="w-8 h-8 text-primary" />
@@ -85,7 +82,7 @@ export default function AuthPage() {
 
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
-          {/* Hero Section */}
+
           <div className="text-center mb-8">
             <div className="flex justify-center mb-4">
               <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center">
@@ -103,7 +100,7 @@ export default function AuthPage() {
             </p>
           </div>
 
-          {/* Features */}
+
           <div className="grid grid-cols-2 gap-4 mb-8">
             <div className="flex items-center gap-2 p-3 bg-card rounded-lg border">
               <IconBook className="w-5 h-5 text-primary" />
@@ -123,7 +120,6 @@ export default function AuthPage() {
             </div>
           </div>
 
-          {/* Auth Form */}
           <div className="bg-card rounded-lg border p-6">
             <form onSubmit={handleAuth} className="space-y-4">
               {!isLogin && (
