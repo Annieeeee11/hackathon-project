@@ -1,8 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: { appDir: true },
   pageExtensions: ['tsx', 'ts', 'jsx', 'js'],
-  output: 'standalone',
+  // Removed standalone output to fix build errors on Windows
+  // If you need standalone output for Docker deployment, uncomment below:
+  // output: 'standalone',
 };
 
 export default nextConfig;
