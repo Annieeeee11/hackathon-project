@@ -77,11 +77,28 @@ export function getEnvConfig(): EnvConfig {
       };
     }
     
-    // In production, still throw error
-    throw new Error(
-      `Missing required environment variables: ${missingVars.join(', ')}\n` +
-      'Please check your .env.local file and ensure all required variables are set.'
-    );
+    // In production, provide fallback values to prevent client-side crashes
+    // Error will be shown in the UI instead
+    console.error('❌ Missing required environment variables in production:', missingVars.join(', '));
+    return {
+      supabaseUrl: requiredVars.supabaseUrl || 'https://placeholder.supabase.co',
+      supabaseAnonKey: requiredVars.supabaseAnonKey || 'placeholder_key',
+      openaiApiKey: requiredVars.openaiApiKey || 'placeholder_key',
+      judge0ApiUrl: optionalVars.judge0ApiUrl || 'https://judge0-ce.p.rapidapi.com',
+      judge0ApiKey: optionalVars.judge0ApiKey || 'placeholder_key',
+      supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+      nextAuthUrl: process.env.NEXTAUTH_URL,
+      nextAuthSecret: process.env.NEXTAUTH_SECRET,
+      databaseUrl: process.env.DATABASE_URL,
+      redisUrl: process.env.REDIS_URL,
+      uploadMaxSize: process.env.UPLOAD_MAX_SIZE ? parseInt(process.env.UPLOAD_MAX_SIZE) : 10485760,
+      allowedFileTypes: process.env.ALLOWED_FILE_TYPES?.split(',') || [
+        'image/jpeg',
+        'image/png', 
+        'image/gif',
+        'application/pdf'
+      ],
+    };
   }
 
   // Warn about optional Judge0 variables if missing
