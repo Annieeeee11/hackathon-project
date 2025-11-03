@@ -32,6 +32,9 @@ export function getEnvConfig(): EnvConfig {
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,
     supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     openaiApiKey: process.env.OPENAI_API_KEY,
+  };
+
+  const optionalVars = {
     judge0ApiUrl: process.env.JUDGE0_API_URL,
     judge0ApiKey: process.env.JUDGE0_API_KEY,
   };
@@ -57,8 +60,8 @@ export function getEnvConfig(): EnvConfig {
         supabaseUrl: requiredVars.supabaseUrl || 'https://placeholder.supabase.co',
         supabaseAnonKey: requiredVars.supabaseAnonKey || 'placeholder_key',
         openaiApiKey: requiredVars.openaiApiKey || 'placeholder_key',
-        judge0ApiUrl: requiredVars.judge0ApiUrl || 'https://judge0-ce.p.rapidapi.com',
-        judge0ApiKey: requiredVars.judge0ApiKey || 'placeholder_key',
+        judge0ApiUrl: optionalVars.judge0ApiUrl || 'https://judge0-ce.p.rapidapi.com',
+        judge0ApiKey: optionalVars.judge0ApiKey || 'placeholder_key',
         supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
         nextAuthUrl: process.env.NEXTAUTH_URL,
         nextAuthSecret: process.env.NEXTAUTH_SECRET,
@@ -81,12 +84,17 @@ export function getEnvConfig(): EnvConfig {
     );
   }
 
+  // Warn about optional Judge0 variables if missing
+  if (!optionalVars.judge0ApiUrl || !optionalVars.judge0ApiKey) {
+    console.warn('ℹ️ Judge0 API credentials not set. Code execution features will be disabled.');
+  }
+
   return {
     supabaseUrl: requiredVars.supabaseUrl!,
     supabaseAnonKey: requiredVars.supabaseAnonKey!,
     openaiApiKey: requiredVars.openaiApiKey!,
-    judge0ApiUrl: requiredVars.judge0ApiUrl!,
-    judge0ApiKey: requiredVars.judge0ApiKey!,
+    judge0ApiUrl: optionalVars.judge0ApiUrl || '',
+    judge0ApiKey: optionalVars.judge0ApiKey || '',
     supabaseServiceKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
     nextAuthUrl: process.env.NEXTAUTH_URL,
     nextAuthSecret: process.env.NEXTAUTH_SECRET,

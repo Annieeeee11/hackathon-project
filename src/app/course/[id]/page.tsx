@@ -197,7 +197,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h3 className="text-lg font-semibold mb-4">Lessons</h3>
               <div className="space-y-2">
-                {course.lessons?.map((lesson, index) => (
+                {course.lessons?.map((lesson) => (
                   <button
                     key={lesson.id}
                     onClick={() => setCurrentLesson(lesson)}

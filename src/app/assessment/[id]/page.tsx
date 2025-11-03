@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, useCallback, use } from "react";
 import { Button } from "@/components/ui/button";
 import CodeEditor from "@/components/assessment/CodeEditor";
 import ResultPanel from "@/components/assessment/ResultPanel";
@@ -115,19 +115,7 @@ export default SearchableList;`,
     setTimeRemaining(mockAssessment.timeLimit * 60);
   }, [id]);
 
-  useEffect(() => {
-    if (timeRemaining > 0 && !isCompleted) {
-      const timer = setTimeout(() => {
-        setTimeRemaining(timeRemaining - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else if (timeRemaining === 0 && !isCompleted) {
-      // Auto-submit when time runs out
-      handleSubmit(assessment?.starterCode || "");
-    }
-  }, [timeRemaining, isCompleted, assessment]);
-
-  const handleSubmit = async (code: string) => {
+  const handleSubmit = useCallback(async (code: string) => {
     if (isSubmitting || isCompleted || !assessment) return;
     
     setIsSubmitting(true);
@@ -154,7 +142,7 @@ export default SearchableList;`,
           success: true,
           feedback: data.result.feedback,
           score: data.result.score,
-          testResults: data.result.testResults || assessment.testCases.map((testCase, index) => ({
+          testResults: data.result.testResults || assessment.testCases.map((testCase) => ({
             testCase,
             passed: data.result.output?.trim() === testCase.expectedOutput.trim(),
             actualOutput: data.result.output || '',
@@ -186,7 +174,19 @@ export default SearchableList;`,
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [isSubmitting, isCompleted, assessment]);
+
+  useEffect(() => {
+    if (timeRemaining > 0 && !isCompleted) {
+      const timer = setTimeout(() => {
+        setTimeRemaining(timeRemaining - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (timeRemaining === 0 && !isCompleted) {
+      // Auto-submit when time runs out
+      handleSubmit(assessment?.starterCode || "");
+    }
+  }, [timeRemaining, isCompleted, assessment, handleSubmit]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

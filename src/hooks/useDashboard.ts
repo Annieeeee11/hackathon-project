@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase, dbHelpers } from '../lib/supabaseClient'
 import { User } from '@supabase/supabase-js'
 
@@ -82,7 +82,7 @@ export function useDashboard() {
     learningAnalytics: { totalSessions: 0, totalTime: 0, averageScore: 0, streak: 0 }
   })
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -145,7 +145,7 @@ export function useDashboard() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   const fetchUserCourses = async (userId: string): Promise<Course[]> => {
     try {
@@ -400,7 +400,7 @@ export function useDashboard() {
 
   useEffect(() => {
     fetchDashboardData()
-  }, [])
+  }, [fetchDashboardData])
 
   return {
     user,
