@@ -2,7 +2,7 @@ import { generateEmbedding } from './openaiClient'
 
 // Type definitions
 interface EmbeddingResult {
-  embedding: number[];
+  embedding: number[]; 
   text: string;
   metadata?: Record<string, unknown>;
 }
