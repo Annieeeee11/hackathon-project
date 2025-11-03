@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/modeToggle";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase, validateSupabaseConfig } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import { IconEye, IconEyeOff, IconLoader2, IconBrain, IconBook, IconTrophy, IconMessageCircle } from "@tabler/icons-react";
 
@@ -23,6 +23,12 @@ export default function AuthPage() {
     setError("");
 
     try {
+      // Validate Supabase configuration before making requests
+      const configValidation = validateSupabaseConfig();
+      if (!configValidation.valid) {
+        throw new Error(configValidation.error || 'Supabase is not configured properly.');
+      }
+
       if (isLogin) {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
@@ -63,7 +69,27 @@ export default function AuthPage() {
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      let errorMessage = "An error occurred";
+      
+      if (err instanceof Error) {
+        errorMessage = err.message;
+        
+        // Provide more helpful error messages
+        if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
+          errorMessage = 
+            'Failed to connect to Supabase. Please check:\n' +
+            '• Your internet connection\n' +
+            '• Supabase credentials in .env.local\n' +
+            '• Your Supabase project is active\n\n' +
+            'See ENVIRONMENT_SETUP.md for setup instructions.';
+        } else if (err.message.includes('Invalid login credentials')) {
+          errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+        } else if (err.message.includes('Email not confirmed')) {
+          errorMessage = 'Please check your email and click the confirmation link before signing in.';
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -180,7 +206,7 @@ export default function AuthPage() {
 
               {error && (
                 <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-                  <p className="text-destructive text-sm">{error}</p>
+                  <p className="text-destructive text-sm whitespace-pre-line">{error}</p>
                 </div>
               )}
 

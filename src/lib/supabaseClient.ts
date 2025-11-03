@@ -3,6 +3,33 @@ import { env } from './env'
 
 const { supabaseUrl, supabaseAnonKey, supabaseServiceKey } = env
 
+// Validate Supabase credentials
+export function validateSupabaseConfig(): { valid: boolean; error?: string } {
+  if (!supabaseUrl || supabaseUrl === 'https://placeholder.supabase.co' || !supabaseUrl.startsWith('https://')) {
+    return {
+      valid: false,
+      error: 'Invalid Supabase URL. Please set NEXT_PUBLIC_SUPABASE_URL in your .env.local file. See ENVIRONMENT_SETUP.md for instructions.'
+    };
+  }
+  
+  if (!supabaseAnonKey || supabaseAnonKey === 'placeholder_key' || supabaseAnonKey.length < 20) {
+    return {
+      valid: false,
+      error: 'Invalid Supabase Anon Key. Please set NEXT_PUBLIC_SUPABASE_ANON_KEY in your .env.local file. See ENVIRONMENT_SETUP.md for instructions.'
+    };
+  }
+  
+  return { valid: true };
+}
+
+// Only validate in browser/client-side to avoid SSR issues
+if (typeof window !== 'undefined') {
+  const validation = validateSupabaseConfig();
+  if (!validation.valid) {
+    console.error('⚠️ Supabase configuration error:', validation.error);
+  }
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
