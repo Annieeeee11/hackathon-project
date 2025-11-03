@@ -1,4 +1,4 @@
-# hackathon-project
+# AI-Learning-Assistant
 
 this repo got 2 branches =>
 
