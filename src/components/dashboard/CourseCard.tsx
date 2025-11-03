@@ -31,7 +31,7 @@ interface CourseCardProps {
   progress?: number;
 }
 
-export default function CourseCard({ course, progress = 0 }: CourseCardProps) {
+export default function CourseCard({ course }: CourseCardProps) {
   const {
     id,
     title,

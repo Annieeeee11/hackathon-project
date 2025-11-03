@@ -4,19 +4,19 @@ import { generateEmbedding } from './openaiClient'
 interface EmbeddingResult {
   embedding: number[];
   text: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 interface SimilarityResult {
   text: string;
   similarity: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
  * Generate embeddings for text content
  */
-export async function createEmbedding(text: string, metadata?: Record<string, any>): Promise<EmbeddingResult> {
+export async function createEmbedding(text: string, metadata?: Record<string, unknown>): Promise<EmbeddingResult> {
   try {
     const embedding = await generateEmbedding(text);
     return {
@@ -82,7 +82,7 @@ export function findSimilarContent(
  */
 export async function createBatchEmbeddings(
   texts: string[],
-  metadata?: Record<string, any>[]
+  metadata?: Record<string, unknown>[]
 ): Promise<EmbeddingResult[]> {
   const results: EmbeddingResult[] = [];
 

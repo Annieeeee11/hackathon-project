@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { IconUser, IconLogout, IconSettings, IconChevronDown } from "@tabler/icons-react";
+import { IconUser, IconLogout, IconChevronDown } from "@tabler/icons-react";
 
 export function UserMenu() {
   const { user, signOut } = useAuth();

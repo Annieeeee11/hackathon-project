@@ -1,8 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 
 // MCP-specific Supabase client configuration
+import { SupabaseClient } from "@supabase/supabase-js";
+
 export class SupabaseMCP {
-  private client: any;
+  private client: SupabaseClient;
   private mcpKey: string;
   private url: string;
   private serviceRoleKey: string;
@@ -22,30 +24,23 @@ export class SupabaseMCP {
   }
 
   // MCP-specific methods
-  async callMCP(operation: string, params: any = {}) {
+  async callMCP(operation: string, params: Record<string, unknown> = {}) {
     try {
       console.log(`[MCP] Calling operation: ${operation}`, params);
-      
-      // Add MCP key to headers for authentication
-      const headers = {
-        'Authorization': `Bearer ${this.mcpKey}`,
-        'Content-Type': 'application/json',
-        'X-MCP-Operation': operation
-      };
 
       // For now, we'll use standard Supabase operations
       // This can be extended based on specific MCP requirements
       switch (operation) {
         case 'query':
-          return await this.query(params);
+          return await this.query(params as { table: string; select?: string; filters?: Record<string, unknown> });
         case 'insert':
-          return await this.insert(params);
+          return await this.insert(params as { table: string; data: Record<string, unknown> | Record<string, unknown>[] });
         case 'update':
-          return await this.update(params);
+          return await this.update(params as { table: string; data: Record<string, unknown>; filters: Record<string, unknown> });
         case 'delete':
-          return await this.delete(params);
+          return await this.delete(params as { table: string; filters: Record<string, unknown> });
         case 'rpc':
-          return await this.callFunction(params);
+          return await this.callFunction(params as { functionName: string; args?: Record<string, unknown> });
         default:
           throw new Error(`Unknown MCP operation: ${operation}`);
       }
@@ -56,7 +51,7 @@ export class SupabaseMCP {
   }
 
   // Query data with MCP context
-  async query(params: { table: string; select?: string; filters?: any }) {
+  async query(params: { table: string; select?: string; filters?: Record<string, unknown> }) {
     const { table, select = '*', filters = {} } = params;
     
     let query = this.client.from(table).select(select);
@@ -82,7 +77,7 @@ export class SupabaseMCP {
   }
 
   // Insert data with MCP context
-  async insert(params: { table: string; data: any }) {
+  async insert(params: { table: string; data: Record<string, unknown> | Record<string, unknown>[] }) {
     const { table, data } = params;
     
     const { data: result, error } = await this.client
@@ -104,7 +99,7 @@ export class SupabaseMCP {
   }
 
   // Update data with MCP context
-  async update(params: { table: string; data: any; filters: any }) {
+  async update(params: { table: string; data: Record<string, unknown>; filters: Record<string, unknown> }) {
     const { table, data, filters } = params;
     
     let query = this.client.from(table).update(data);
@@ -130,7 +125,7 @@ export class SupabaseMCP {
   }
 
   // Delete data with MCP context
-  async delete(params: { table: string; filters: any }) {
+  async delete(params: { table: string; filters: Record<string, unknown> }) {
     const { table, filters } = params;
     
     let query = this.client.from(table).delete();
@@ -156,7 +151,7 @@ export class SupabaseMCP {
   }
 
   // Call Supabase function with MCP context
-  async callFunction(params: { functionName: string; args?: any }) {
+  async callFunction(params: { functionName: string; args?: Record<string, unknown> }) {
     const { functionName, args = {} } = params;
     
     const { data, error } = await this.client.rpc(functionName, args);
@@ -178,7 +173,7 @@ export class SupabaseMCP {
   async getStatus() {
     try {
       // Test connection with a simple query
-      const { data, error } = await this.client
+      const { error } = await this.client
         .from('information_schema.tables')
         .select('table_name')
         .limit(1);

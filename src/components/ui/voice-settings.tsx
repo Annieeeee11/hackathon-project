@@ -6,7 +6,6 @@ import { ttsManager, TTSVoice } from '@/lib/tts';
 import { 
   IconVolume, 
   IconVolumeOff, 
-  IconSettings,
   IconX
 } from '@tabler/icons-react';
 

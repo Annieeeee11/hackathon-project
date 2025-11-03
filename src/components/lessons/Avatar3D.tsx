@@ -15,7 +15,6 @@ interface ProfessorModelProps {
 function ProfessorModel({ isSpeaking, currentMessage, emotion = 'neutral' }: ProfessorModelProps) {
   const { scene } = useGLTF('/professor.glb')
   const groupRef = useRef<Group>(null)
-  const [animationPhase, setAnimationPhase] = useState(0)
   
   useFrame((state) => {
     if (groupRef.current) {
@@ -26,9 +25,6 @@ function ProfessorModel({ isSpeaking, currentMessage, emotion = 'neutral' }: Pro
       if (isSpeaking) {
         groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 2) * 0.08
         groupRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 1.5) * 0.03
-        
-        // Simulate mouth movement
-        setAnimationPhase(state.clock.elapsedTime * 4)
       } else {
         // Idle animation
         groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.02
@@ -340,7 +336,7 @@ export default function Avatar3D({
         </p>
         {currentMessage && (
           <p className="text-xs text-primary mt-1 italic">
-            "{currentMessage.substring(0, 50)}{currentMessage.length > 50 ? '...' : ''}"
+            &quot;{currentMessage.substring(0, 50)}{currentMessage.length > 50 ? '...' : ''}&quot;
           </p>
         )}
       </div>

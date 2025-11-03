@@ -85,7 +85,7 @@ export async function gradeSubmission(code: string, expectedOutput: string, lang
     const hasErrors = result.stderr || result.compile_output
     
     let score = 0
-    let feedback = []
+    const feedback: string[] = []
     
     if (isCorrect && !hasErrors) {
       score = 100

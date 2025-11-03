@@ -8,7 +8,6 @@ import {
   IconTrophy, 
   IconMessageCircle, 
   IconArrowRight,
-  IconCheck,
   IconUsers,
   IconStar,
   IconCode,
@@ -183,7 +182,7 @@ export default function LandingPage() {
                     <IconStar key={i} className="w-5 h-5 text-yellow-400 fill-current" />
                   ))}
                 </div>
-                <p className="text-muted-foreground mb-4">"{testimonial.content}"</p>
+                <p className="text-muted-foreground mb-4">&quot;{testimonial.content}&quot;</p>
                 <div>
                   <div className="font-semibold">{testimonial.name}</div>
                   <div className="text-sm text-muted-foreground">{testimonial.role}</div>
@@ -201,7 +200,7 @@ export default function LandingPage() {
           </h2>
           <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
             Join our community of learners and start building your coding skills with AI-powered education.
-            It's free to get started!
+            It&apos;s free to get started!
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/auth">

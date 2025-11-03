@@ -24,9 +24,6 @@ export async function POST(request: NextRequest) {
     const courseData = await generateCourseWithAI(tags)
     console.log('Generated course data:', courseData)
 
-    const totalLessons = courseData.lessons?.length || 0
-    const estimatedHours = totalLessons * 0.5 // Assume 30 min per lesson
-
     return NextResponse.json({
       success: true,
       course: courseData
@@ -39,7 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (courseData.lessons && courseData.lessons.length > 0) {
-      const lessonInserts = courseData.lessons.map((lesson: any, index: number) => ({
+      const lessonInserts = courseData.lessons.map((lesson: { title: string; content?: string; objectives?: string[] }, index: number) => ({
         course_id: courseData.id,
         title: lesson.title,
         content: lesson.content || '',
@@ -48,7 +45,7 @@ export async function POST(request: NextRequest) {
         duration_minutes: 30,
         objectives: lesson.objectives || [],
         is_published: true
-      }))
+      })) as { course_id: string; title: string; content: string; lesson_type: string; order_number: number; duration_minutes: number; objectives: string[]; is_published: boolean }[]
 
       const { error: lessonsError } = await supabase
         .from('lessons')
@@ -148,7 +145,7 @@ Return the response in the following JSON format:
       id: `course_${Date.now()}`,
       ...courseData,
       tags: tags,
-      lessons: courseData.lessons.map((lesson: any, index: number) => ({
+      lessons: courseData.lessons.map((lesson: { title: string; content: string; duration?: string; difficulty?: string; objectives?: string[] }, index: number) => ({
         id: `lesson_${index + 1}`,
         ...lesson
       }))
@@ -173,39 +170,7 @@ Return the response in the following JSON format:
 }
 
 function generateFallbackLessons(tags: string[]) {
-  const lessons = [];
-  const baseLessons = [
-    {
-      title: "Introduction & Setup",
-      content: "Get started with the fundamentals and set up your development environment",
-      duration: "30 min",
-      difficulty: "Beginner" as const,
-    },
-    {
-      title: "Core Concepts",
-      content: "Learn the essential concepts and principles",
-      duration: "45 min",
-      difficulty: "Beginner" as const,
-    },
-    {
-      title: "Hands-on Practice",
-      content: "Apply what you've learned with practical exercises",
-      duration: "60 min",
-      difficulty: "Intermediate" as const,
-    },
-    {
-      title: "Advanced Topics",
-      content: "Dive deeper into advanced concepts and best practices",
-      duration: "50 min",
-      difficulty: "Advanced" as const,
-    },
-    {
-      title: "Project Building",
-      content: "Build a real-world project to showcase your skills",
-      duration: "90 min",
-      difficulty: "Advanced" as const,
-    },
-  ];
+  const lessons: { id: string; title: string; content: string; duration: string; difficulty: 'Beginner' | 'Intermediate' | 'Advanced' }[] = [];
 
   tags.forEach((tag, index) => {
     lessons.push({
@@ -213,7 +178,7 @@ function generateFallbackLessons(tags: string[]) {
       title: `${tag.charAt(0).toUpperCase() + tag.slice(1)} Fundamentals`,
       content: `Master the basics of ${tag} with interactive examples and exercises`,
       duration: "40 min",
-      difficulty: "Beginner" as const,
+      difficulty: "Beginner",
     });
   });
 
@@ -222,7 +187,7 @@ function generateFallbackLessons(tags: string[]) {
     title: "Capstone Project",
     content: `Build a comprehensive project using ${tags.join(", ")}`,
     duration: "120 min",
-    difficulty: "Advanced" as const,
+    difficulty: "Advanced",
   });
 
   return lessons;

@@ -1,5 +1,5 @@
 "use client"
-import { IconCheck, IconX, IconClock, IconLoader2, IconTrophy, IconTarget } from "@tabler/icons-react"
+import { IconCheck, IconX, IconLoader2, IconTrophy, IconTarget } from "@tabler/icons-react"
 
 interface TestCase {
   input: string;

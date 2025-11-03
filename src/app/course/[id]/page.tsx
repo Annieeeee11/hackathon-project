@@ -4,14 +4,6 @@ import { supabase } from "@/lib/supabaseClient";
 import Avatar3D from "@/components/lessons/Avatar3D";
 import ChatBox from "@/components/lessons/ChatBox";
 
-interface Message {
-  id: string;
-  sender: 'user' | 'ai';
-  content: string;
-  timestamp: Date;
-  code?: string;
-}
-
 interface Lesson {
   id: string;
   title: string;
@@ -23,6 +15,13 @@ interface Lesson {
   is_published: boolean;
 }
 
+interface Assessment {
+  id: string;
+  title: string;
+  type: string;
+  description: string;
+}
+
 interface Course {
   id: string;
   title: string;
@@ -30,7 +29,7 @@ interface Course {
   duration: string;
   tags: string[];
   lessons: Lesson[];
-  assessments: any[];
+  assessments: Assessment[];
   total_lessons: number;
   estimated_hours: number;
   difficulty_level: string;
@@ -41,9 +40,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
   const { id } = use(params);
   const [course, setCourse] = useState<Course | null>(null);
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isChatLoading, setIsChatLoading] = useState(false);
   const [isAvatarSpeaking, setIsAvatarSpeaking] = useState(false);
   const [currentSpeakingText, setCurrentSpeakingText] = useState("");
 
@@ -79,82 +76,12 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
     fetchCourse();
   }, [id]);
 
-  const handleSendMessage = async (message: string) => {
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      sender: 'user',
-      content: message,
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    setIsChatLoading(true);
-
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          question: message,
-          lessonId: currentLesson?.id,
-          courseId: id,
-          userId: 'demo-user'
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        const aiMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          sender: 'ai',
-          content: data.answer,
-          timestamp: new Date()
-        };
-
-        setMessages(prev => [...prev, aiMessage]);
-        
-        setCurrentSpeakingText(data.answer);
-        setIsAvatarSpeaking(true);
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        sender: 'ai',
-        content: "Sorry, I'm having trouble responding right now. Please try again.",
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsChatLoading(false);
-    }
-  };
-
-  const handleSpeakingComplete = () => {
-    setIsAvatarSpeaking(false);
-    setCurrentSpeakingText("");
-  };
-
   const startLesson = () => {
     if (currentLesson) {
       const lessonIntro = `Welcome to ${currentLesson.title}. ${currentLesson.content.substring(0, 200)}...`;
       setCurrentSpeakingText(lessonIntro);
       setIsAvatarSpeaking(true);
     }
-  };
-
-  const quickQuestions = [
-    "Can you explain this concept in simpler terms?",
-    "Can you give me a practical example?",
-    "What are the key takeaways from this lesson?",
-    "How can I apply this in real projects?"
-  ];
-
-  const handleQuickQuestion = (question: string) => {
-    handleSendMessage(question);
   };
 
   if (isLoading) {
@@ -173,7 +100,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Course Not Found</h2>
-          <p className="text-gray-600">The course you're looking for doesn't exist.</p>
+          <p className="text-gray-600">The course you&apos;re looking for doesn&apos;t exist.</p>
         </div>
       </div>
     );
@@ -214,10 +141,8 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-xl font-semibold mb-4">AI Professor</h2>
               <Avatar3D
-                isTeaching={isAvatarSpeaking}
                 isSpeaking={isAvatarSpeaking}
-                currentText={currentSpeakingText}
-                onSpeakingComplete={handleSpeakingComplete}
+                currentMessage={currentSpeakingText}
               />
             </div>
 
@@ -245,30 +170,9 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h2 className="text-xl font-semibold mb-4">Ask Your AI Professor</h2>
               
-              {/* Quick Question Suggestions */}
-              {messages.length === 0 && (
-                <div className="mb-4">
-                  <p className="text-sm text-gray-600 mb-3">Quick questions to get started:</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {quickQuestions.map((question, index) => (
-                      <button
-                        key={index}
-                        onClick={() => handleQuickQuestion(question)}
-                        className="text-left p-3 text-sm bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors"
-                      >
-                        {question}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
               
               <ChatBox
-                onSendMessage={handleSendMessage}
-                isLoading={isChatLoading}
-                messages={messages}
-                placeholder="Ask me anything about this lesson..."
-                lessonId={currentLesson?.id}
+                lessonId={currentLesson?.id || ''}
               />
             </div>
           </div>

@@ -6,12 +6,10 @@ import CodeEditor from "@/components/assessment/CodeEditor";
 import ResultPanel from "@/components/assessment/ResultPanel";
 import { 
   IconArrowLeft,
-  IconCheck,
   IconClock,
   IconTarget,
   IconCode,
   IconBulb,
-  IconLoader2,
   IconBrain,
   IconRocket
 } from "@tabler/icons-react";
@@ -114,7 +112,7 @@ export default SearchableList;`,
     };
     
     setAssessment(mockAssessment);
-    setTimeRemaining(mockAssessment.timeLimit * 60); // Convert to seconds
+    setTimeRemaining(mockAssessment.timeLimit * 60);
   }, [id]);
 
   useEffect(() => {

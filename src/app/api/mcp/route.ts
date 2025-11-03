@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseMCP } from '@/lib/supabaseMCP';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Get MCP status
     const status = await supabaseMCP.getStatus();

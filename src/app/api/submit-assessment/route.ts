@@ -33,7 +33,7 @@ export async function POST(req: Request) {
         memory: executionResult.memory,
         score: gradingResult?.score || 0,
         feedback: gradingResult?.feedback || "Code executed successfully",
-        testResults: testCases ? testCases.map((testCase: any) => ({
+        testResults: testCases ? testCases.map((testCase: { input: string; expectedOutput: string }) => ({
           testCase,
           passed: executionResult.stdout.trim() === testCase.expectedOutput.trim(),
           actualOutput: executionResult.stdout,

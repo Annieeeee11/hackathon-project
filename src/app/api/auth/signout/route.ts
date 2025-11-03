@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     const { error } = await supabase.auth.signOut();
     
@@ -10,7 +10,8 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ message: 'Signed out successfully' });
-  } catch (error) {
+  } catch (err) {
+    console.error('Sign out error:', err);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

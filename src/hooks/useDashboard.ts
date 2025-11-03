@@ -35,7 +35,7 @@ interface UserProgress {
   totalLessons: number;
   completedLessons: number;
   averageScore: number;
-  progressData?: any[];
+  progressData?: Array<{ status: string; progress_percentage: number }>;
 }
 
 interface Conversation {
@@ -58,7 +58,7 @@ interface LearningAnalytics {
   totalTime: number;
   averageScore: number;
   streak: number;
-  sessionData?: any[];
+  sessionData?: Array<{ total_time_minutes?: number; average_score?: number; created_at: string }>;
 }
 
 interface DashboardData {
@@ -101,15 +101,17 @@ export function useDashboard() {
       setUser(user)
 
       // Get or create user profile
-      let { data: profileData, error: profileError } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', user.id)
         .single()
 
+      let finalProfileData = profileData;
+
       if (profileError && profileError.code === 'PGRST116') {
         // Profile doesn't exist, create it
-        profileData = await dbHelpers.createProfile(user.id, {
+        finalProfileData = await dbHelpers.createProfile(user.id, {
           email: user.email,
           full_name: user.user_metadata?.full_name || 'Student'
         })
@@ -117,7 +119,7 @@ export function useDashboard() {
         throw profileError
       }
 
-      setProfile(profileData)
+      setProfile(finalProfileData)
 
       // Fetch all dashboard data
       const [courses, userProgress, conversations, achievements, analytics] = await Promise.all([
@@ -148,7 +150,7 @@ export function useDashboard() {
   const fetchUserCourses = async (userId: string): Promise<Course[]> => {
     try {
       const courses = await dbHelpers.getUserCourses(userId)
-      return courses.map((course: any) => ({
+      return courses.map((course: Course & { course_enrollments?: Array<{ progress_percentage?: number }> }) => ({
         ...course,
         lessons: course.lessons || [],
         progress: course.course_enrollments?.[0]?.progress_percentage || 0
@@ -174,9 +176,9 @@ export function useDashboard() {
       if (error) throw error
 
       const totalLessons = data?.length || 0
-      const completedLessons = data?.filter((p: any) => p.status === 'completed').length || 0
+      const completedLessons = data?.filter((p: { status: string }) => p.status === 'completed').length || 0
       const averageScore = data?.length > 0 
-        ? Math.round(data.reduce((sum: number, p: any) => sum + (p.progress_percentage || 0), 0) / data.length)
+        ? Math.round(data.reduce((sum: number, p: { progress_percentage?: number }) => sum + (p.progress_percentage || 0), 0) / data.length)
         : 0
 
       return {
@@ -205,7 +207,7 @@ export function useDashboard() {
 
       if (error) throw error
 
-      return data?.map((conv: any) => ({
+      return data?.map((conv: { question: string; answer: string; course_id?: string; created_at: string; courses?: { title: string } }) => ({
         question: conv.question,
         answer: conv.answer,
         course: conv.courses?.title,
@@ -246,16 +248,16 @@ export function useDashboard() {
       if (error) throw error
 
       const totalSessions = data?.length || 0
-      const totalTime = data?.reduce((sum: number, session: any) => sum + (session.total_time_minutes || 0), 0) || 0
+      const totalTime = data?.reduce((sum: number, session: { total_time_minutes?: number }) => sum + (session.total_time_minutes || 0), 0) || 0
       const averageScore = data?.length > 0
-        ? Math.round(data.reduce((sum: number, session: any) => sum + (session.average_score || 0), 0) / data.length)
+        ? Math.round(data.reduce((sum: number, session: { average_score?: number }) => sum + (session.average_score || 0), 0) / data.length)
         : 0
 
       // Calculate learning streak
       let streak = 0
       if (data && data.length > 0) {
         const today = new Date()
-        const sessionDates = data.map((s: any) => new Date(s.created_at).toDateString())
+        const sessionDates = data.map((s: { created_at: string }) => new Date(s.created_at).toDateString())
         const uniqueDates = [...new Set(sessionDates)].sort((a, b) => new Date(b).getTime() - new Date(a).getTime())
         
         for (let i = 0; i < uniqueDates.length; i++) {

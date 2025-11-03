@@ -5,10 +5,10 @@ import { Button } from '@/components/ui/button';
 
 interface MCPResponse {
   message?: string;
-  result?: any;
-  status?: any;
+  result?: unknown;
+  status?: { connected: boolean; database?: string };
   error?: string;
-  endpoints?: any;
+  endpoints?: Record<string, string>;
 }
 
 export default function MCPTestPage() {
@@ -23,7 +23,7 @@ export default function MCPTestPage() {
       const res = await fetch('/api/mcp');
       const data = await res.json();
       setResponse(data);
-    } catch (error) {
+    } catch {
       setResponse({ error: 'Failed to get MCP status' });
     } finally {
       setLoading(false);

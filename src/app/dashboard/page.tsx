@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import CourseCard from "@/components/dashboard/CourseCard";
@@ -8,7 +8,6 @@ import ActivityFeed from "@/components/dashboard/ActivityFeed";
 import {
   IconTrendingUp,
   IconClock,
-  IconTarget,
   IconAward,
   IconBook,
   IconBrain,
@@ -108,7 +107,6 @@ const mockStats: Stats = {
 };
 
 export default function Dashboard() {
-  const [selectedTimeframe, setSelectedTimeframe] = useState("week");
 
   return (
     <AppLayout 
@@ -170,12 +168,12 @@ export default function Dashboard() {
           <div className="bg-card rounded-lg border p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">My Courses</h2>
-              <a href="/">
+              <Link href="/">
                 <Button>
                   <IconBrain className="w-4 h-4 mr-2" />
                   Generate New Course
                 </Button>
-              </a>
+              </Link>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {mockCourses.map((course) => (

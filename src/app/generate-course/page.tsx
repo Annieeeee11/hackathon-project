@@ -49,7 +49,7 @@ export default function GenerateCoursePage() {
   const [loading, setLoading] = useState(false);
   const [course, setCourse] = useState<Course | null>(null);
   const [error, setError] = useState("");
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ id?: string; email?: string } | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const router = useRouter();
 
@@ -123,8 +123,8 @@ export default function GenerateCoursePage() {
 
       const data = await response.json();
       setCourse(data.course);
-    } catch (err: any) {
-      setError(err.message || "Something went wrong");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setLoading(false);
     }

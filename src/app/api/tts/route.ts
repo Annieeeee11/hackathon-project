@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { textToSpeech } from '@/lib/tts'
 
 export async function POST(request: NextRequest) {
   try {
-    const { text, voice = 'alloy', speed = 1.0, format = 'mp3' } = await request.json()
+    const { text } = await request.json()
 
     if (!text) {
       return NextResponse.json(
@@ -12,23 +11,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const ttsResult = await textToSpeech(text, {
-      voice: voice as any,
-      speed: speed,
-      format: format as any
-    })
-
-    return new NextResponse(ttsResult.audioBuffer as any, {
-      headers: {
-        'Content-Type': `audio/${format}`,
-        'Content-Length': ttsResult.audioBuffer.length.toString(),
-      },
+    // Return success - client will handle TTS
+    return NextResponse.json({
+      success: true,
+      message: 'Use client-side TTS manager for speech synthesis'
     })
 
   } catch (error) {
     console.error('TTS API error:', error)
     return NextResponse.json(
-      { error: 'Failed to generate speech' },
+      { error: 'Failed to process TTS request' },
       { status: 500 }
     )
   }

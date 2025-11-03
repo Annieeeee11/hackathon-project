@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { answerDoubt } from "@/lib/openaiClient";
 import { dbHelpers, supabase } from "@/lib/supabaseClient";
 import OpenAI from "openai";
 

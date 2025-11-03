@@ -4,9 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/modeToggle";
 import { 
-  IconBook, 
   IconBrain, 
-  IconDashboard, 
   IconMessageCircle, 
   IconClock,
   IconTarget,
@@ -239,7 +237,7 @@ export default function AssessmentsPage() {
               </div>
               <h3 className="text-2xl font-bold text-foreground mb-4">No assessments found</h3>
               <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                Try adjusting your filter criteria to find the assessments you're looking for.
+                Try adjusting your filter criteria to find the assessments you&apos;re looking for.
               </p>
               <Button size="lg" onClick={() => setFilterStatus("all")}>
                 <IconTarget className="w-4 h-4 mr-2" />

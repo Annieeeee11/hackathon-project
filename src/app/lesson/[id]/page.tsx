@@ -292,7 +292,7 @@ function Counter() {
                           Summary
                         </h2>
                         <p className="text-muted-foreground leading-relaxed mb-4">
-                          You've completed this lesson! Here's what you've learned:
+                          You&apos;ve completed this lesson! Here&apos;s what you&apos;ve learned:
                         </p>
                         <ul className="space-y-2">
                           {lesson.keyPoints.map((point, index) => (

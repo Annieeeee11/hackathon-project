@@ -5,14 +5,12 @@ import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/modeToggle";
 import CourseCard from "@/components/dashboard/CourseCard";
 import { 
-  IconPlus,
   IconSearch,
   IconFilter,
   IconBrain,
   IconBook,
   IconMessageCircle,
-  IconArrowRight,
-  IconRocket
+  IconArrowRight
 } from "@tabler/icons-react";
 import Link from "next/link";
 import AppLayout from "@/components/layout/AppLayout";

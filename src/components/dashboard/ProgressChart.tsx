@@ -15,7 +15,7 @@ interface ChartDataPoint {
 }
 
 interface UserProgress {
-  courses?: any[];
+  courses?: Array<{ id: string | number; title: string }>;
   completedLessons?: number;
   totalLessons?: number;
   averageScore?: number;

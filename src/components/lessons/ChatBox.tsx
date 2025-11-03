@@ -3,10 +3,44 @@ import { useState, useRef, useEffect } from 'react'
 import { IconSend, IconLoader2, IconUser, IconBrain } from '@tabler/icons-react'
 
 // TypeScript declaration for Speech Recognition API
+interface SpeechRecognitionType {
+  new (): SpeechRecognitionInstance;
+}
+
+interface SpeechRecognitionInstance {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onerror: () => void;
+  onend: () => void;
+}
+
+interface SpeechRecognitionEvent {
+  results: SpeechRecognitionResultList;
+}
+
+interface SpeechRecognitionResultList {
+  [index: number]: SpeechRecognitionResult;
+  length: number;
+}
+
+interface SpeechRecognitionResult {
+  [index: number]: SpeechRecognitionAlternative;
+  isFinal: boolean;
+}
+
+interface SpeechRecognitionAlternative {
+  transcript: string;
+  confidence: number;
+}
+
 declare global {
   interface Window {
-    webkitSpeechRecognition: any;
-    SpeechRecognition: any;
+    webkitSpeechRecognition: SpeechRecognitionType;
+    SpeechRecognition: SpeechRecognitionType;
   }
 }
 
@@ -41,7 +75,7 @@ export default function ChatBox({ lessonId }: { lessonId: string }) {
   const [isClient, setIsClient] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const recognitionRef = useRef<any>(null)
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
 
   // Ensure we're on the client side to prevent hydration issues
   useEffect(() => {
@@ -65,7 +99,7 @@ export default function ChatBox({ lessonId }: { lessonId: string }) {
       recognitionRef.current.interimResults = false
       recognitionRef.current.lang = 'en-US'
 
-      recognitionRef.current.onresult = (event: any) => {
+      recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
         const transcript = event.results[0][0].transcript
         setInput(transcript)
         setIsListening(false)

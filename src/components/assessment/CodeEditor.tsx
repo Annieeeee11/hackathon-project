@@ -20,9 +20,9 @@ export default function CodeEditor({
   isCompleted = false
 }: CodeEditorProps) {
   const [code, setCode] = useState(starterCode)
-  const editorRef = useRef<any>(null)
+  const editorRef = useRef<unknown>(null)
 
-  const handleEditorDidMount = (editor: any) => {
+  const handleEditorDidMount = (editor: unknown) => {
     editorRef.current = editor
   }
 

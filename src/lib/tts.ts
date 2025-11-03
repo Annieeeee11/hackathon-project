@@ -371,7 +371,7 @@ export class TTSManager {
   }
 
   // Handle common TTS errors gracefully
-  private handleTTSError(error: any): void {
+  private handleTTSError(error: SpeechSynthesisErrorEvent): void {
     console.warn('TTS Error handled:', error);
     
     // Reset TTS state on error
