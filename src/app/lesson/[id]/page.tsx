@@ -14,9 +14,12 @@ import {
   IconCode,
   IconBulb,
   IconMessageCircle,
-  IconBook
+  IconBook,
+  IconLoader2
 } from "@tabler/icons-react";
 import { ModeToggle } from "@/components/modeToggle";
+import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Lesson {
   id: string;
@@ -27,6 +30,7 @@ interface Lesson {
   codeExample?: string;
   explanation: string;
   keyPoints: string[];
+  course_id?: string;
 }
 
 interface LessonPageProps {
@@ -37,50 +41,79 @@ interface LessonPageProps {
 
 export default function LessonPage({ params }: LessonPageProps) {
   const { id } = use(params);
+  const { user } = useAuth();
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [avatarEmotion, setAvatarEmotion] = useState<'neutral' | 'happy' | 'thinking' | 'explaining'>('neutral');
   const [currentAvatarMessage, setCurrentAvatarMessage] = useState("");
 
   useEffect(() => {
-    const mockLesson: Lesson = {
-      id: id,
-      title: "React Hooks Fundamentals",
-      content: "Learn about React Hooks and how to use them effectively in your applications. This lesson covers useState, useEffect, and custom hooks.",
-      duration: "45 min",
-      difficulty: "Intermediate",
-      codeExample: `import React, { useState, useEffect } from 'react';
+    const fetchLesson = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-function Counter() {
-  const [count, setCount] = useState(0);
-  
-  useEffect(() => {
-    document.title = \`Count: \${count}\`;
-  }, [count]);
-  
-  return (
-    <div>
-      <p>Count: {count}</p>
-      <button onClick={() => setCount(count + 1)}>
-        Increment
-      </button>
-    </div>
-  );
-}`,
-      explanation: "React Hooks allow you to use state and other React features in functional components. The useState hook manages component state, while useEffect handles side effects like API calls or DOM updates.",
-      keyPoints: [
-        "Hooks can only be called at the top level of React functions",
-        "useState returns a state value and a setter function",
-        "useEffect runs after every render by default",
-        "Custom hooks allow you to extract component logic into reusable functions"
-      ]
+        // Fetch lesson from database
+        const { data: lessonData, error: lessonError } = await supabase
+          .from('lessons')
+          .select('*')
+          .eq('id', id)
+          .eq('is_published', true)
+          .single();
+
+        if (lessonError) {
+          throw lessonError;
+        }
+
+        if (!lessonData) {
+          throw new Error('Lesson not found');
+        }
+
+        // Transform database lesson to component format
+        const fetchedLesson: Lesson = {
+          id: lessonData.id,
+          title: lessonData.title,
+          content: lessonData.content || lessonData.explanation || '',
+          duration: lessonData.duration || '30 min',
+          difficulty: (lessonData.difficulty as "Beginner" | "Intermediate" | "Advanced") || "Beginner",
+          codeExample: lessonData.code_example || undefined,
+          explanation: lessonData.explanation || lessonData.content || '',
+          keyPoints: lessonData.key_points || [],
+          course_id: lessonData.course_id
+        };
+
+        setLesson(fetchedLesson);
+
+        // Check if user has completed this lesson
+        if (user) {
+          const { data: progressData } = await supabase
+            .from('user_progress')
+            .select('completed')
+            .eq('user_id', user.id)
+            .eq('lesson_id', id)
+            .single();
+
+          if (progressData?.completed) {
+            setIsCompleted(true);
+            setCurrentStep(3);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching lesson:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load lesson');
+      } finally {
+        setLoading(false);
+      }
     };
-    setLesson(mockLesson);
-  }, [id]);
+
+    fetchLesson();
+  }, [id, user]);
 
   const handlePlayPause = () => {
     const newPlayingState = !isPlaying;
@@ -113,11 +146,74 @@ function Counter() {
     setIsMuted(!isMuted);
   };
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
     } else {
-      setIsCompleted(true);
+      // Mark lesson as completed
+      if (user && lesson) {
+        try {
+          const { error: progressError } = await supabase
+            .from('user_progress')
+            .upsert({
+              user_id: user.id,
+              lesson_id: lesson.id,
+              course_id: lesson.course_id,
+              completed: true,
+              completed_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+
+          if (progressError) {
+            console.error('Error saving progress:', progressError);
+            alert('Failed to save progress. Please try again.');
+          } else {
+            setIsCompleted(true);
+            console.log('Lesson marked as completed');
+            
+            // Update course enrollment progress
+            if (lesson.course_id) {
+              // Get all lessons for this course
+              const { data: allLessons } = await supabase
+                .from('lessons')
+                .select('id')
+                .eq('course_id', lesson.course_id)
+                .eq('is_published', true);
+
+              // Get completed lessons
+              const { data: completedLessons } = await supabase
+                .from('user_progress')
+                .select('lesson_id')
+                .eq('user_id', user.id)
+                .eq('course_id', lesson.course_id)
+                .eq('completed', true);
+
+              if (allLessons && completedLessons) {
+                const totalLessons = allLessons.length;
+                const completedCount = completedLessons.length;
+                const progressPercentage = totalLessons > 0 
+                  ? Math.round((completedCount / totalLessons) * 100) 
+                  : 0;
+
+                // Update enrollment progress
+                await supabase
+                  .from('course_enrollments')
+                  .update({ 
+                    progress_percentage: progressPercentage,
+                    last_accessed: new Date().toISOString()
+                  })
+                  .eq('user_id', user.id)
+                  .eq('course_id', lesson.course_id);
+              }
+            }
+          }
+        } catch (err) {
+          console.error('Error completing lesson:', err);
+          alert('Failed to save progress. Please try again.');
+        }
+      } else {
+        setIsCompleted(true);
+      }
     }
   };
 
@@ -127,16 +223,36 @@ function Counter() {
     }
   };
 
-  if (!lesson) {
+  if (loading) {
     return (
-      <div className="flex h-screen bg-background">
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading lesson...</p>
+      <AppLayout>
+        <div className="flex h-screen bg-background">
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <IconLoader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+              <p className="text-muted-foreground">Loading lesson...</p>
+            </div>
           </div>
         </div>
-      </div>
+      </AppLayout>
+    );
+  }
+
+  if (error || !lesson) {
+    return (
+      <AppLayout>
+        <div className="flex h-screen bg-background">
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <p className="text-destructive mb-4">{error || 'Lesson not found'}</p>
+              <Button onClick={() => window.history.back()}>
+                <IconArrowLeft className="w-4 h-4 mr-2" />
+                Go Back
+              </Button>
+            </div>
+          </div>
+        </div>
+      </AppLayout>
     );
   }
 
@@ -146,7 +262,11 @@ function Counter() {
         <main className="flex-1 flex flex-col overflow-hidden">
           <header className="flex justify-between items-center p-6 border-b">
             <div className="flex items-center gap-4">
-              <Button variant="outline" size="sm" onClick={() => window.history.back()}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => lesson.course_id ? window.location.href = `/course/${lesson.course_id}` : window.history.back()}
+              >
                 <IconArrowLeft className="w-4 h-4 mr-2" />
                 Back to Course
               </Button>
@@ -253,16 +373,22 @@ function Counter() {
                           <IconBulb className="w-5 h-5 text-primary" />
                           Key Concepts
                         </h2>
-                        <div className="space-y-3">
-                          {lesson.keyPoints.map((point, index) => (
-                            <div key={index} className="flex items-start gap-3">
-                              <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium mt-0.5">
-                                {index + 1}
+                        {lesson.keyPoints && lesson.keyPoints.length > 0 ? (
+                          <div className="space-y-3">
+                            {lesson.keyPoints.map((point, index) => (
+                              <div key={index} className="flex items-start gap-3">
+                                <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-medium mt-0.5">
+                                  {index + 1}
+                                </div>
+                                <p className="text-muted-foreground">{point}</p>
                               </div>
-                              <p className="text-muted-foreground">{point}</p>
-                            </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground">
+                            {lesson.explanation || "Review the introduction to understand the key concepts of this lesson."}
+                          </p>
+                        )}
                       </div>
                     )}
 
@@ -295,12 +421,19 @@ function Counter() {
                           You&apos;ve completed this lesson! Here&apos;s what you&apos;ve learned:
                         </p>
                         <ul className="space-y-2">
-                          {lesson.keyPoints.map((point, index) => (
-                            <li key={index} className="flex items-center gap-2">
+                          {lesson.keyPoints && lesson.keyPoints.length > 0 ? (
+                            lesson.keyPoints.map((point, index) => (
+                              <li key={index} className="flex items-center gap-2">
+                                <IconCheck className="w-4 h-4 text-green-500" />
+                                <span className="text-muted-foreground">{point}</span>
+                              </li>
+                            ))
+                          ) : (
+                            <li className="flex items-center gap-2">
                               <IconCheck className="w-4 h-4 text-green-500" />
-                              <span className="text-muted-foreground">{point}</span>
+                              <span className="text-muted-foreground">Completed lesson: {lesson.title}</span>
                             </li>
-                          ))}
+                          )}
                         </ul>
                       </div>
                     )}

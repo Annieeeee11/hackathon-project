@@ -3,6 +3,9 @@ import { use, useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import Avatar3D from "@/components/lessons/Avatar3D";
 import ChatBox from "@/components/lessons/ChatBox";
+import { useAuth } from "@/contexts/AuthContext";
+import Link from "next/link";
+import { IconCheck, IconCircle } from "@tabler/icons-react";
 
 interface Lesson {
   id: string;
@@ -38,20 +41,31 @@ interface Course {
 
 export default function CoursePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const { user } = useAuth();
   const [course, setCourse] = useState<Course | null>(null);
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAvatarSpeaking, setIsAvatarSpeaking] = useState(false);
   const [currentSpeakingText, setCurrentSpeakingText] = useState("");
+  const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
+  const [progressPercentage, setProgressPercentage] = useState(0);
 
   useEffect(() => {
     const fetchCourse = async () => {
       try {
+        // Fetch course with lessons
         const { data: courseData, error: courseError } = await supabase
           .from('courses')
           .select(`
             *,
-            lessons (*)
+            lessons:lessons!lessons_course_id_fkey (
+              id,
+              title,
+              content,
+              duration,
+              order_index,
+              is_published
+            )
           `)
           .eq('id', id)
           .single();
@@ -61,10 +75,46 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
           return;
         }
 
-        setCourse(courseData);
+        // Sort lessons by order_index
+        const sortedLessons = (courseData.lessons || [])
+          .filter((l: any) => l.is_published)
+          .sort((a: any, b: any) => a.order_index - b.order_index);
+
+        setCourse({
+          ...courseData,
+          lessons: sortedLessons
+        });
         
-        if (courseData.lessons && courseData.lessons.length > 0) {
-          setCurrentLesson(courseData.lessons[0]);
+        if (sortedLessons.length > 0) {
+          setCurrentLesson(sortedLessons[0]);
+        }
+
+        // Fetch user progress for this course
+        if (user) {
+          const { data: progressData } = await supabase
+            .from('user_progress')
+            .select('lesson_id, completed')
+            .eq('user_id', user.id)
+            .eq('course_id', id)
+            .eq('completed', true);
+
+          if (progressData) {
+            const completedSet = new Set(progressData.map((p: any) => p.lesson_id));
+            setCompletedLessons(completedSet);
+
+            // Calculate progress percentage
+            const totalLessons = sortedLessons.length;
+            const completedCount = completedSet.size;
+            const progress = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
+            setProgressPercentage(progress);
+
+            // Update enrollment progress
+            await supabase
+              .from('course_enrollments')
+              .update({ progress_percentage: progress })
+              .eq('user_id', user.id)
+              .eq('course_id', id);
+          }
         }
       } catch (error) {
         console.error('Error:', error);
@@ -74,7 +124,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
     };
 
     fetchCourse();
-  }, [id]);
+  }, [id, user]);
 
   const startLesson = () => {
     if (currentLesson) {
@@ -185,37 +235,62 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
                   <span>Progress</span>
-                  <span>0%</span>
+                  <span>{progressPercentage}%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-500 h-2 rounded-full" style={{ width: '0%' }}></div>
+                  <div 
+                    className="bg-blue-500 h-2 rounded-full transition-all duration-500" 
+                    style={{ width: `${progressPercentage}%` }}
+                  ></div>
                 </div>
-                <p className="text-sm text-gray-600">Complete lessons to track your progress</p>
+                <p className="text-sm text-gray-600">
+                  {completedLessons.size} of {course.lessons?.length || 0} lessons completed
+                </p>
               </div>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h3 className="text-lg font-semibold mb-4">Lessons</h3>
               <div className="space-y-2">
-                {course.lessons?.map((lesson) => (
-                  <button
-                    key={lesson.id}
-                    onClick={() => setCurrentLesson(lesson)}
-                    className={`w-full text-left p-3 rounded-lg border transition-colors ${
-                      currentLesson?.id === lesson.id
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-sm">{lesson.title}</p>
-                        <p className="text-xs text-gray-500">{lesson.duration_minutes} min</p>
+                {course.lessons?.map((lesson) => {
+                  const isCompleted = completedLessons.has(lesson.id);
+                  const isCurrent = currentLesson?.id === lesson.id;
+                  
+                  return (
+                    <Link
+                      key={lesson.id}
+                      href={`/lesson/${lesson.id}`}
+                      className={`block w-full text-left p-3 rounded-lg border transition-colors ${
+                        isCurrent
+                          ? 'border-blue-500 bg-blue-50'
+                          : isCompleted
+                          ? 'border-green-500 bg-green-50 hover:border-green-600'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-sm">{lesson.title}</p>
+                            {isCompleted && (
+                              <IconCheck className="w-4 h-4 text-green-600" />
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500">{lesson.duration || '30 min'}</p>
+                        </div>
+                        <div className="ml-2">
+                          {isCompleted ? (
+                            <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                              <IconCheck className="w-4 h-4 text-white" />
+                            </div>
+                          ) : (
+                            <div className="w-6 h-6 rounded-full border-2 border-gray-300"></div>
+                          )}
+                        </div>
                       </div>
-                      <div className="w-4 h-4 rounded-full border-2 border-gray-300"></div>
-                    </div>
-                  </button>
-                ))}
+                    </Link>
+                  );
+                })}
               </div>
             </div>
 
