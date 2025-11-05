@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import AppLayout from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -11,15 +12,24 @@ import {
   IconAward,
   IconBook,
   IconBrain,
+  IconLoader2,
 } from "@tabler/icons-react";
 import QuickActions from "@/components/dashboard/quickActions";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabaseClient";
+
+interface Lesson {
+  id: string;
+  title: string;
+  completed: boolean;
+}
 
 interface Course {
-  id: number;
+  id: string;
   title: string;
   description: string;
   duration: string;
-  lessons: Array<{ id: number; title: string; completed: boolean }>;
+  lessons: Lesson[];
   tags: string[];
   created_at: string;
 }
@@ -32,81 +42,182 @@ interface Stats {
   averageScore: number;
 }
 
-
-const mockCourses: Course[] = [
-  {
-    id: 1,
-    title: "React.js Fundamentals",
-    description: "Master the basics of React including components, props, state, and hooks",
-    duration: "4 weeks",
-    lessons: [
-      { id: 1, title: "Introduction to React", completed: true },
-      { id: 2, title: "Components and JSX", completed: true },
-      { id: 3, title: "Props and State", completed: true },
-      { id: 4, title: "Event Handling", completed: true },
-      { id: 5, title: "Lifecycle Methods", completed: true },
-      { id: 6, title: "Hooks", completed: true },
-      { id: 7, title: "Context API", completed: true },
-      { id: 8, title: "Routing", completed: false },
-      { id: 9, title: "State Management", completed: false },
-      { id: 10, title: "Testing", completed: false },
-    ],
-    tags: ["react", "javascript", "frontend"],
-    created_at: "2024-01-15",
-  },
-  {
-    id: 2,
-    title: "Data Structures & Algorithms",
-    description: "Learn fundamental data structures and algorithms for efficient programming",
-    duration: "6 weeks",
-    lessons: [
-      { id: 1, title: "Arrays and Lists", completed: true },
-      { id: 2, title: "Stacks and Queues", completed: true },
-      { id: 3, title: "Linked Lists", completed: true },
-      { id: 4, title: "Trees", completed: true },
-      { id: 5, title: "Graphs", completed: false },
-      { id: 6, title: "Sorting Algorithms", completed: false },
-      { id: 7, title: "Searching Algorithms", completed: false },
-      { id: 8, title: "Dynamic Programming", completed: false },
-      { id: 9, title: "Greedy Algorithms", completed: false },
-      { id: 10, title: "Complexity Analysis", completed: false },
-      { id: 11, title: "Hash Tables", completed: false },
-      { id: 12, title: "Advanced Topics", completed: false },
-    ],
-    tags: ["algorithms", "data-structures", "programming"],
-    created_at: "2024-01-10",
-  },
-  {
-    id: 3,
-    title: "Machine Learning Basics",
-    description: "Introduction to machine learning concepts and practical applications",
-    duration: "3 weeks",
-    lessons: [
-      { id: 1, title: "Introduction to ML", completed: true },
-      { id: 2, title: "Data Preprocessing", completed: true },
-      { id: 3, title: "Linear Regression", completed: true },
-      { id: 4, title: "Logistic Regression", completed: true },
-      { id: 5, title: "Decision Trees", completed: true },
-      { id: 6, title: "Random Forest", completed: true },
-      { id: 7, title: "Clustering", completed: true },
-      { id: 8, title: "Neural Networks", completed: true },
-      { id: 9, title: "Model Evaluation", completed: true },
-      { id: 10, title: "Deployment", completed: false },
-    ],
-    tags: ["machine-learning", "python", "ai"],
-    created_at: "2024-01-05",
-  },
-];
-
-const mockStats: Stats = {
-  totalCourses: 3,
-  completedCourses: 1,
-  totalHours: 24,
-  currentStreak: 7,
-  averageScore: 85,
-};
-
 export default function Dashboard() {
+  const { user, loading: authLoading } = useAuth();
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [stats, setStats] = useState<Stats>({
+    totalCourses: 0,
+    completedCourses: 0,
+    totalHours: 0,
+    currentStreak: 0,
+    averageScore: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch enrolled courses with course details
+        const { data: enrollments, error: enrollmentError } = await supabase
+          .from('course_enrollments')
+          .select(`
+            course_id,
+            progress_percentage,
+            status,
+            courses (
+              id,
+              title,
+              description,
+              duration,
+              tags,
+              created_at,
+              estimated_hours
+            )
+          `)
+          .eq('user_id', user.id)
+          .eq('status', 'active')
+          .order('last_accessed', { ascending: false });
+
+        if (enrollmentError) {
+          throw enrollmentError;
+        }
+
+        if (!enrollments || enrollments.length === 0) {
+          setCourses([]);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch lessons and progress for each course
+        const coursesWithProgress = await Promise.all(
+          enrollments.map(async (enrollment: any) => {
+            const course = enrollment.courses;
+            if (!course) return null;
+
+            // Fetch lessons for this course
+            const { data: lessons, error: lessonsError } = await supabase
+              .from('lessons')
+              .select('id, title, order_index')
+              .eq('course_id', course.id)
+              .eq('is_published', true)
+              .order('order_index', { ascending: true });
+
+            // Fetch user progress for lessons
+            const { data: progress, error: progressError } = await supabase
+              .from('user_progress')
+              .select('lesson_id, completed')
+              .eq('user_id', user.id)
+              .eq('course_id', course.id)
+              .eq('completed', true);
+
+            const completedLessonIds = new Set(
+              (progress || []).map((p: any) => p.lesson_id)
+            );
+
+            const lessonsWithProgress: Lesson[] = (lessons || []).map((lesson: any) => ({
+              id: lesson.id,
+              title: lesson.title,
+              completed: completedLessonIds.has(lesson.id)
+            }));
+
+            return {
+              id: course.id,
+              title: course.title,
+              description: course.description || '',
+              duration: course.duration || '4 weeks',
+              tags: course.tags || [],
+              lessons: lessonsWithProgress,
+              created_at: course.created_at,
+              progress_percentage: enrollment.progress_percentage || 0,
+              estimated_hours: course.estimated_hours || 0
+            };
+          })
+        );
+
+        const validCourses = coursesWithProgress.filter(
+          (course): course is Course => course !== null
+        );
+
+        setCourses(validCourses);
+
+        // Calculate stats
+        const totalCourses = validCourses.length;
+        const completedCourses = validCourses.filter(
+          (course) => course.lessons.length > 0 && 
+          course.lessons.every((lesson) => lesson.completed)
+        ).length;
+        
+        const totalHours = validCourses.reduce(
+          (sum, course) => sum + ((course as any).estimated_hours || 0),
+          0
+        );
+
+        // Fetch streak data
+        const { data: streakData } = await supabase
+          .from('user_streaks')
+          .select('current_streak')
+          .eq('user_id', user.id)
+          .single();
+
+        const currentStreak = streakData?.current_streak || 0;
+
+        // Calculate average score (placeholder for now)
+        const averageScore = 0;
+
+        setStats({
+          totalCourses,
+          completedCourses,
+          totalHours,
+          currentStreak,
+          averageScore,
+        });
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load dashboard');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (!authLoading) {
+      fetchDashboardData();
+    }
+  }, [user, authLoading]);
+
+  if (authLoading || loading) {
+    return (
+      <AppLayout title="Dashboard" subtitle="Track your learning progress and achievements">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <IconLoader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">Loading dashboard...</p>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AppLayout title="Dashboard" subtitle="Track your learning progress and achievements">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <p className="text-destructive mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>Retry</Button>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout 
@@ -120,7 +231,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Courses</p>
-                  <p className="text-2xl font-bold">{mockStats.totalCourses}</p>
+                  <p className="text-2xl font-bold">{stats.totalCourses}</p>
                 </div>
                 <IconBook className="w-8 h-8 text-primary" />
               </div>
@@ -131,7 +242,7 @@ export default function Dashboard() {
                 <div>
                   <p className="text-sm text-muted-foreground">Completed</p>
                   <p className="text-2xl font-bold">
-                    {mockStats.completedCourses}
+                    {stats.completedCourses}
                   </p>
                 </div>
                 <IconAward className="w-8 h-8 text-gray-600" />
@@ -142,7 +253,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Study Hours</p>
-                  <p className="text-2xl font-bold">{mockStats.totalHours}h</p>
+                  <p className="text-2xl font-bold">{stats.totalHours}h</p>
                 </div>
                 <IconClock className="w-8 h-8 text-gray-600" />
               </div>
@@ -155,7 +266,7 @@ export default function Dashboard() {
                     Current Streak
                   </p>
                   <p className="text-2xl font-bold">
-                    {mockStats.currentStreak} days
+                    {stats.currentStreak} days
                   </p>
                 </div>
                 <IconTrendingUp className="w-8 h-8 text-gray-600" />
@@ -168,18 +279,34 @@ export default function Dashboard() {
           <div className="bg-card rounded-lg border p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">My Courses</h2>
-              <Link href="/">
+              <Link href="/generate-course">
                 <Button>
                   <IconBrain className="w-4 h-4 mr-2" />
                   Generate New Course
                 </Button>
               </Link>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {mockCourses.map((course) => (
-                <CourseCard key={course.id} course={course} />
-              ))}
-            </div>
+            {courses.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {courses.map((course) => (
+                  <CourseCard key={course.id} course={course} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <IconBook className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <h3 className="text-lg font-semibold mb-2">No courses yet</h3>
+                <p className="text-muted-foreground mb-4">
+                  Start your learning journey by generating your first AI-powered course
+                </p>
+                <Link href="/generate-course">
+                  <Button>
+                    <IconBrain className="w-4 h-4 mr-2" />
+                    Generate Your First Course
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Recent Activity */}
