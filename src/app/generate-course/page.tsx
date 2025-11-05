@@ -301,7 +301,7 @@ export default function GenerateCoursePage() {
                     </div>
                   </div>
                 </div>
-                <Link href="/dashboard">
+                <Link href={`/course/${course.id}`}>
                   <Button size="lg" className="bg-primary hover:bg-primary/90">
                     <IconDashboard className="w-4 h-4 mr-2" />
                     Start Learning

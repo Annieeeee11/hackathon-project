@@ -101,11 +101,6 @@ export function getEnvConfig(): EnvConfig {
     };
   }
 
-  // Warn about optional Judge0 variables if missing
-  if (!optionalVars.judge0ApiUrl || !optionalVars.judge0ApiKey) {
-    console.warn('ℹ️ Judge0 API credentials not set. Code execution features will be disabled.');
-  }
-
   return {
     supabaseUrl: requiredVars.supabaseUrl!,
     supabaseAnonKey: requiredVars.supabaseAnonKey!,

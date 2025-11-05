@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import getOpenAI from '@/lib/openaiClient'
-import { supabase, dbHelpers } from '@/lib/supabaseClient'
+import { supabase, supabaseAdmin, dbHelpers } from '@/lib/supabaseClient'
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,52 +24,131 @@ export async function POST(request: NextRequest) {
     const courseData = await generateCourseWithAI(tags)
     console.log('Generated course data:', courseData)
 
-    return NextResponse.json({
-      success: true,
-      course: courseData
-    })
-
-    try {
-      await dbHelpers.enrollInCourse(userId, courseData.id)
-    } catch (enrollError) {
-      console.error('Enrollment error:', enrollError)
+    // Use service role client for server-side operations (bypasses RLS)
+    const adminClient = supabaseAdmin || supabase
+    if (!supabaseAdmin) {
+      console.warn('⚠️ Supabase service role key not set. Using anon client - RLS policies may block operations.')
     }
 
+    // Save course to database
+    const { data: savedCourse, error: courseError } = await adminClient
+      .from('courses')
+      .insert({
+        title: courseData.title,
+        description: courseData.description,
+        short_description: courseData.description?.substring(0, 150) || courseData.description,
+        duration: courseData.estimatedDuration || courseData.duration || '4 weeks',
+        difficulty_level: courseData.difficulty || courseData.difficulty_level || 'Beginner',
+        estimated_hours: parseEstimatedHours(courseData.estimatedDuration || courseData.duration),
+        tags: courseData.tags || tags,
+        is_published: true,
+        created_by: userId
+      })
+      .select()
+      .single()
+
+    if (courseError) {
+      console.error('Course creation error:', courseError)
+      throw new Error(`Failed to save course: ${courseError.message}`)
+    }
+
+    const courseId = savedCourse.id
+    console.log('Course saved to database with ID:', courseId)
+
+    // Save lessons to database
+    let savedLessons = []
     if (courseData.lessons && courseData.lessons.length > 0) {
-      const lessonInserts = courseData.lessons.map((lesson: { title: string; content?: string; objectives?: string[] }, index: number) => ({
-        course_id: courseData.id,
+      const lessonInserts = courseData.lessons.map((lesson: { title: string; content?: string; duration?: string; difficulty?: string; keyPoints?: string[]; objectives?: string[] }, index: number) => ({
+        course_id: courseId,
         title: lesson.title,
         content: lesson.content || '',
-        lesson_type: 'theory',
-        order_number: index + 1,
-        duration_minutes: 30,
-        objectives: lesson.objectives || [],
+        explanation: lesson.content || '',
+        duration: lesson.duration || '30 min',
+        difficulty: lesson.difficulty || courseData.difficulty || 'Beginner',
+        key_points: lesson.keyPoints || lesson.objectives || [],
+        order_index: index + 1,
         is_published: true
-      })) as { course_id: string; title: string; content: string; lesson_type: string; order_number: number; duration_minutes: number; objectives: string[]; is_published: boolean }[]
+      }))
 
-      const { error: lessonsError } = await supabase
+      const { data: insertedLessons, error: lessonsError } = await adminClient
         .from('lessons')
         .insert(lessonInserts)
+        .select()
 
       if (lessonsError) {
         console.error('Lessons creation error:', lessonsError)
+        // Don't throw, continue even if lessons fail
+      } else {
+        savedLessons = insertedLessons || []
+        console.log(`Saved ${savedLessons.length} lessons to database`)
       }
     }
 
+    // Enroll user in the course using admin client
     try {
-      await dbHelpers.logLearningSession(userId, courseData.id, {
-        session_duration: 5, // Course generation time
-        lessons_completed: 0
-      })
-    } catch (analyticsError) {
-      console.error('Analytics error:', analyticsError)
+      const { error: enrollError } = await adminClient
+        .from('course_enrollments')
+        .insert({
+          user_id: userId,
+          course_id: courseId,
+          status: 'active',
+          progress_percentage: 0
+        })
+
+      if (enrollError) {
+        console.error('Enrollment error:', enrollError)
+      } else {
+        console.log('User enrolled in course')
+      }
+    } catch (enrollError) {
+      console.error('Enrollment error:', enrollError)
+      // Don't throw, course is already created
     }
 
+    // Log learning analytics using admin client
+    try {
+      const { error: analyticsError } = await adminClient
+        .from('learning_analytics')
+        .insert({
+          user_id: userId,
+          course_id: courseId,
+          session_duration: 5, // Course generation time
+          lessons_completed: 0
+        })
+
+      if (analyticsError) {
+        console.error('Analytics error:', analyticsError)
+      } else {
+        console.log('Learning session logged')
+      }
+    } catch (analyticsError) {
+      console.error('Analytics error:', analyticsError)
+      // Don't throw, course creation is successful
+    }
+
+    // Return course with database ID and saved lessons
     return NextResponse.json({
       success: true,
       course: {
-        ...courseData,
-        lessons: courseData.lessons
+        id: courseId,
+        title: savedCourse.title,
+        description: savedCourse.description,
+        duration: savedCourse.duration,
+        difficulty: savedCourse.difficulty_level,
+        tags: savedCourse.tags,
+        estimatedDuration: savedCourse.duration,
+        difficulty_level: savedCourse.difficulty_level,
+        estimated_hours: savedCourse.estimated_hours,
+        lessons: savedLessons.map((lesson, index) => ({
+          id: lesson.id,
+          title: lesson.title,
+          content: lesson.content || lesson.explanation || '',
+          duration: lesson.duration,
+          difficulty: lesson.difficulty,
+          order_number: lesson.order_index,
+          objectives: lesson.key_points || []
+        })),
+        created_at: savedCourse.created_at
       }
     })
 
@@ -191,4 +270,26 @@ function generateFallbackLessons(tags: string[]) {
   });
 
   return lessons;
+}
+
+// Helper function to parse estimated hours from duration string
+function parseEstimatedHours(duration: string): number {
+  if (!duration) return 0;
+  
+  // Extract number from strings like "4 weeks", "6 weeks", "2-3 weeks"
+  const weekMatch = duration.match(/(\d+)/);
+  if (weekMatch) {
+    const weeks = parseInt(weekMatch[1]);
+    // Assume ~5 hours per week average
+    return weeks * 5;
+  }
+  
+  // Extract hours from strings like "40 hours", "20h"
+  const hourMatch = duration.match(/(\d+)\s*h/i);
+  if (hourMatch) {
+    return parseInt(hourMatch[1]);
+  }
+  
+  // Default fallback
+  return 20; // Default to 20 hours
 }
