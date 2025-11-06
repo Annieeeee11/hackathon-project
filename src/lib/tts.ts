@@ -1,4 +1,3 @@
-// Text-to-Speech Library for AI Professor
 export interface TTSOptions {
   voice?: string;
   rate?: number;

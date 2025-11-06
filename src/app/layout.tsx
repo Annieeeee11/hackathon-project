@@ -9,7 +9,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <head />
       <body>
-        <ErrorBoundary>
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
@@ -20,7 +19,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               {children}
             </AuthProvider>
           </ThemeProvider>
-        </ErrorBoundary>
         <Analytics />
       </body>
     </html>

@@ -12,35 +12,15 @@ import {
   IconAward,
   IconBook,
   IconBrain,
-  IconLoader2,
 } from "@tabler/icons-react";
 import QuickActions from "@/components/dashboard/quickActions";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
-
-interface Lesson {
-  id: string;
-  title: string;
-  completed: boolean;
-}
-
-interface Course {
-  id: string;
-  title: string;
-  description: string;
-  duration: string;
-  lessons: Lesson[];
-  tags: string[];
-  created_at: string;
-}
-
-interface Stats {
-  totalCourses: number;
-  completedCourses: number;
-  totalHours: number;
-  currentStreak: number;
-  averageScore: number;
-}
+import { Course, Lesson, Stats } from "@/lib/types";
+import { StatCard } from "@/components/common/StatCard";
+import { EmptyState } from "@/components/common/EmptyState";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { ROUTES } from "@/lib/constants";
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -138,26 +118,28 @@ export default function Dashboard() {
               lessons: lessonsWithProgress,
               created_at: course.created_at,
               progress_percentage: enrollment.progress_percentage || 0,
-              estimated_hours: course.estimated_hours || 0
-            };
+              estimated_hours: course.estimated_hours || 0,
+              difficulty: course.difficulty
+            } as Course;
           })
         );
 
-        const validCourses = coursesWithProgress.filter(
-          (course): course is Course => course !== null
-        );
-
+        // Filter out null values
+        const validCourses = coursesWithProgress.filter((course): course is Course => course !== null);
+        
         setCourses(validCourses);
 
         // Calculate stats
         const totalCourses = validCourses.length;
         const completedCourses = validCourses.filter(
-          (course) => course.lessons.length > 0 && 
-          course.lessons.every((lesson) => lesson.completed)
+          (course) => 
+            course.lessons && 
+            course.lessons.length > 0 && 
+            course.lessons.every((lesson) => lesson.completed)
         ).length;
         
         const totalHours = validCourses.reduce(
-          (sum, course) => sum + ((course as any).estimated_hours || 0),
+          (sum, course) => sum + (course.estimated_hours || 0),
           0
         );
 
@@ -196,12 +178,7 @@ export default function Dashboard() {
   if (authLoading || loading) {
     return (
       <AppLayout title="Dashboard" subtitle="Track your learning progress and achievements">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <IconLoader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
-            <p className="text-muted-foreground">Loading dashboard...</p>
-          </div>
-        </div>
+        <LoadingSpinner text="Loading dashboard..." />
       </AppLayout>
     );
   }
@@ -225,57 +202,34 @@ export default function Dashboard() {
       subtitle="Track your learning progress and achievements"
     >
       <div className="space-y-6">
-          {/* Stats Overview */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-card rounded-lg border p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Courses</p>
-                  <p className="text-2xl font-bold">{stats.totalCourses}</p>
-                </div>
-                <IconBook className="w-8 h-8 text-primary" />
-              </div>
-            </div>
-
-            <div className="bg-card rounded-lg border p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Completed</p>
-                  <p className="text-2xl font-bold">
-                    {stats.completedCourses}
-                  </p>
-                </div>
-                <IconAward className="w-8 h-8 text-gray-600" />
-              </div>
-            </div>
-
-            <div className="bg-card rounded-lg border p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Study Hours</p>
-                  <p className="text-2xl font-bold">{stats.totalHours}h</p>
-                </div>
-                <IconClock className="w-8 h-8 text-gray-600" />
-              </div>
-            </div>
-
-            <div className="bg-card rounded-lg border p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    Current Streak
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {stats.currentStreak} days
-                  </p>
-                </div>
-                <IconTrendingUp className="w-8 h-8 text-gray-600" />
-              </div>
-            </div>
+            <StatCard
+              label="Total Courses"
+              value={stats.totalCourses}
+              icon={<IconBook className="w-8 h-8" />}
+              iconColor="text-primary"
+            />
+            <StatCard
+              label="Completed"
+              value={stats.completedCourses}
+              icon={<IconAward className="w-8 h-8" />}
+              iconColor="text-gray-600"
+            />
+            <StatCard
+              label="Study Hours"
+              value={`${stats.totalHours}h`}
+              icon={<IconClock className="w-8 h-8" />}
+              iconColor="text-gray-600"
+            />
+            <StatCard
+              label="Current Streak"
+              value={`${stats.currentStreak} days`}
+              icon={<IconTrendingUp className="w-8 h-8" />}
+              iconColor="text-gray-600"
+            />
           </div>
 
 
-          {/* My Courses */}
           <div className="bg-card rounded-lg border p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">My Courses</h2>
@@ -293,23 +247,16 @@ export default function Dashboard() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12">
-                <IconBook className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-                <h3 className="text-lg font-semibold mb-2">No courses yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Start your learning journey by generating your first AI-powered course
-                </p>
-                <Link href="/generate-course">
-                  <Button>
-                    <IconBrain className="w-4 h-4 mr-2" />
-                    Generate Your First Course
-                  </Button>
-                </Link>
-              </div>
+              <EmptyState
+                icon={<IconBook className="w-16 h-16 mx-auto text-muted-foreground opacity-50" />}
+                title="No courses yet"
+                description="Start your learning journey by generating your first AI-powered course"
+                actionLabel="Generate Your First Course"
+                actionHref={ROUTES.generateCourse}
+              />
             )}
           </div>
 
-          {/* Recent Activity */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-card rounded-lg border p-6">
               <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>

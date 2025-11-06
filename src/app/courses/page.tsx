@@ -10,30 +10,16 @@ import {
   IconBrain,
   IconBook,
   IconMessageCircle,
-  IconArrowRight,
-  IconLoader2
+  IconArrowRight
 } from "@tabler/icons-react";
 import Link from "next/link";
 import AppLayout from "@/components/layout/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
-
-interface Lesson {
-  id: string;
-  title: string;
-  completed: boolean;
-}
-
-interface Course {
-  id: string;
-  title: string;
-  description: string;
-  duration?: string;
-  lessons?: Lesson[];
-  tags?: string[];
-  created_at: string;
-  progress_percentage?: number;
-}
+import { Course, Lesson } from "@/lib/types";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { EmptyState } from "@/components/common/EmptyState";
+import { DIFFICULTY_LEVELS, ROUTES, APP_CONFIG } from "@/lib/constants";
 
 export default function CoursesPage() {
   const { user, loading: authLoading } = useAuth();
@@ -159,12 +145,7 @@ export default function CoursesPage() {
   if (authLoading || loading) {
     return (
       <AppLayout>
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="text-center">
-            <IconLoader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
-            <p className="text-muted-foreground">Loading courses...</p>
-          </div>
-        </div>
+        <LoadingSpinner text="Loading courses..." />
       </AppLayout>
     );
   }
@@ -172,7 +153,7 @@ export default function CoursesPage() {
   if (error) {
     return (
       <AppLayout>
-        <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <p className="text-destructive mb-4">{error}</p>
             <Button onClick={() => window.location.reload()}>Retry</Button>
@@ -185,15 +166,14 @@ export default function CoursesPage() {
   return (
     <AppLayout>
       <div className="min-h-screen bg-background">
-        {/* Header */}
         <header className="flex justify-between items-center p-6 border-b">
           <div className="flex items-center gap-2">
             <IconBrain className="w-8 h-8 text-primary" />
-            <h1 className="text-2xl font-bold text-foreground">AI Learning Assistant</h1>
+            <h1 className="text-2xl font-bold text-foreground">{APP_CONFIG.name}</h1>
           </div>
           <div className="flex items-center gap-4">
             <ModeToggle />
-            <Link href="/chat">
+            <Link href={ROUTES.chat}>
               <Button variant="outline">
                 <IconMessageCircle className="w-4 h-4 mr-2" />
                 AI Chat
@@ -202,7 +182,6 @@ export default function CoursesPage() {
           </div>
         </header>
 
-        {/* Hero Section */}
         <section className="py-12 px-6">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-8">
@@ -220,9 +199,8 @@ export default function CoursesPage() {
               </p>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex justify-center mb-8">
-              <Link href="/generate-course">
+              <Link href={ROUTES.generateCourse}>
                 <Button size="lg">
                   <IconBrain className="w-4 h-4 mr-2" />
                   Generate New Course
@@ -230,8 +208,6 @@ export default function CoursesPage() {
                 </Button>
               </Link>
             </div>
-
-            {/* Search and Filter */}
             <div className="flex gap-4 items-center mb-8 max-w-2xl mx-auto">
               <div className="flex-1 relative">
                 <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -250,10 +226,11 @@ export default function CoursesPage() {
                   onChange={(e) => setFilterDifficulty(e.target.value)}
                   className="px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 >
-                  <option value="all">All Levels</option>
-                  <option value="beginner">Beginner</option>
-                  <option value="intermediate">Intermediate</option>
-                  <option value="advanced">Advanced</option>
+                  {DIFFICULTY_LEVELS.map((level) => (
+                    <option key={level.value} value={level.value}>
+                      {level.label}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -266,25 +243,21 @@ export default function CoursesPage() {
             </div>
 
             {filteredCourses.length === 0 && (
-              <div className="text-center py-16">
-                <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <IconBook className="w-10 h-10 text-primary" />
-                </div>
-                <h3 className="text-2xl font-bold text-foreground mb-4">No courses found</h3>
-                <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                  {searchTerm || filterDifficulty !== "all" 
+              <EmptyState
+                icon={
+                  <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                    <IconBook className="w-10 h-10 text-primary" />
+                  </div>
+                }
+                title="No courses found"
+                description={
+                  searchTerm || filterDifficulty !== "all" 
                     ? "Try adjusting your search or filter criteria to find what you're looking for."
                     : "Start your learning journey by generating your first personalized course with AI."
-                  }
-                </p>
-                <Link href="/generate-course">
-                  <Button size="lg">
-                    <IconBrain className="w-4 h-4 mr-2" />
-                    Generate Your First Course
-                    <IconArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-              </div>
+                }
+                actionLabel="Generate Your First Course"
+                actionHref={ROUTES.generateCourse}
+              />
             )}
           </div>
         </section>
