@@ -7,15 +7,19 @@ import ResultPanel from "@/components/assessment/ResultPanel";
 import { 
   IconArrowLeft,
   IconClock,
-  IconTarget,
-  IconCode,
-  IconBulb,
   IconBrain,
-  IconRocket
+  IconRocket,
+  IconTarget,
+  IconBulb,
+  IconCode
 } from "@tabler/icons-react";
-import { ModeToggle } from "@/components/modeToggle";
 import Link from "next/link";
 import AppLayout from "@/components/layout/AppLayout";
+import { Card } from "@/components/common/Card";
+import { PageHeader } from "@/components/common/PageHeader";
+import { DifficultyBadge } from "@/components/common/DifficultyBadge";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { ModeToggle } from "@/components/modeToggle";
 
 
 interface Assessment {
@@ -196,13 +200,8 @@ export default SearchableList;`,
 
   if (!assessment) {
     return (
-      <div className="flex h-screen bg-background">
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Loading assessment...</p>
-          </div>
-        </div>
+      <div className="flex h-screen bg-background items-center justify-center">
+        <LoadingSpinner text="Loading assessment..." />
       </div>
     );
   }
@@ -248,9 +247,13 @@ export default SearchableList;`,
               </div>
             </div>
             <h1 className="text-3xl font-bold text-foreground mb-2">{assessment.title}</h1>
-            <p className="text-muted-foreground">
-              {assessment.difficulty} • {assessment.language} • {assessment.timeLimit} min
-            </p>
+            <div className="flex items-center justify-center gap-2 text-muted-foreground">
+              <DifficultyBadge difficulty={assessment.difficulty as any} />
+              <span>•</span>
+              <span>{assessment.language}</span>
+              <span>•</span>
+              <span>{assessment.timeLimit} min</span>
+            </div>
           </div>
         </div>
       </section>

@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { Button } from "@/components/ui/button";
-import { ModeToggle } from "@/components/modeToggle";
 import { 
   IconPlus,
   IconX,
@@ -18,6 +17,12 @@ import {
 } from "@tabler/icons-react";
 import Link from "next/link";
 import AppLayout from "@/components/layout/AppLayout";
+import { PageHeader } from "@/components/common/PageHeader";
+import { PageHero } from "@/components/common/PageHero";
+import { Card } from "@/components/common/Card";
+import { Tag, TagList } from "@/components/common/Tag";
+import { InfoItem, InfoList } from "@/components/common/InfoItem";
+import { DifficultyBadge } from "@/components/common/DifficultyBadge";
 
 interface Lesson {
   id: string;
@@ -133,43 +138,33 @@ export default function GenerateCoursePage() {
   return (
     <AppLayout>
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="flex justify-between items-center p-6 border-b">
-        <div className="flex items-center gap-2">
-          <IconBrain className="w-8 h-8 text-primary" />
-          <h1 className="text-2xl font-bold text-foreground">AI Learning Assistant</h1>
-        </div>
-        <div className="flex items-center gap-4">
-          <ModeToggle />
+      <PageHeader
+        title="AI Learning Assistant"
+        logo={<IconBrain className="w-8 h-8 text-primary" />}
+        actions={
           <Link href="/chat">
             <Button variant="outline">
               <IconMessageCircle className="w-4 h-4 mr-2" />
               AI Chat
             </Button>
           </Link>
-        </div>
-      </header>
+        }
+      />
 
-      {/* Hero Section */}
       <section className="py-12 px-6">
         <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center">
-                <IconRocket className="w-8 h-8 text-primary-foreground" />
-              </div>
-            </div>
-            <h1 className="text-4xl font-bold text-foreground mb-4">
-              Generate Your
-              <span className="text-primary"> AI Course</span>
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Create personalized courses with our AI Professor. Add skill tags and get structured lessons tailored just for you!
-            </p>
-          </div>
+          <PageHero
+            icon={<IconRocket />}
+            title={
+              <>
+                Generate Your
+                <span className="text-primary"> AI Course</span>
+              </>
+            }
+            description="Create personalized courses with our AI Professor. Add skill tags and get structured lessons tailored just for you!"
+          />
 
-          {/* Course Generator Section */}
-          <div className="bg-card rounded-lg border p-8 mb-8">
+          <Card padding="lg" className="mb-8">
             <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2">
               <IconBrain className="w-6 h-6 text-primary" />
               Course Generator
@@ -179,25 +174,20 @@ export default function GenerateCoursePage() {
               Add skill tags to generate a personalized course. Our AI Professor will create structured lessons just for you!
             </p>
 
-            {/* Popular Tags */}
             <div className="mb-6">
               <h3 className="text-sm font-medium mb-3">Popular Skills</h3>
-              <div className="flex flex-wrap gap-2">
+              <TagList>
                 {popularTags.map((tag) => (
-                  <button
+                  <Tag
                     key={tag}
+                    variant={tags.includes(tag) ? "primary" : "default"}
                     onClick={() => addTag(tag)}
                     disabled={tags.includes(tag)}
-                    className={`px-3 py-1 rounded-full text-sm border transition-colors ${
-                      tags.includes(tag)
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-secondary text-secondary-foreground border-border hover:bg-accent"
-                    }`}
                   >
                     #{tag}
-                  </button>
+                  </Tag>
                 ))}
-              </div>
+              </TagList>
             </div>
 
             {/* Custom Tag Input */}
@@ -229,26 +219,20 @@ export default function GenerateCoursePage() {
               </div>
             </div>
 
-            {/* Selected Tags */}
             {tags.length > 0 && (
               <div className="mb-6">
                 <h3 className="text-sm font-medium mb-3">Selected Skills ({tags.length})</h3>
-                <div className="flex flex-wrap gap-2">
+                <TagList>
                   {tags.map((tag) => (
-                    <div
+                    <Tag
                       key={tag}
-                      className="flex items-center gap-1 px-3 py-1 bg-primary text-primary-foreground rounded-full text-sm"
+                      variant="primary"
+                      onRemove={() => removeTag(tag)}
                     >
                       #{tag}
-                      <button
-                        onClick={() => removeTag(tag)}
-                        className="hover:bg-primary-foreground/20 rounded-full p-0.5"
-                      >
-                        <IconX className="w-3 h-3" />
-                      </button>
-                    </div>
+                    </Tag>
                   ))}
-                </div>
+                </TagList>
               </div>
             )}
 
@@ -273,33 +257,23 @@ export default function GenerateCoursePage() {
             </Button>
 
             {error && (
-              <div className="mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+              <Card variant="default" padding="md" className="mt-4 bg-destructive/10 border-destructive/20">
                 <p className="text-destructive text-sm">{error}</p>
-              </div>
+              </Card>
             )}
-          </div>
+          </Card>
 
-          {/* Generated Course Display */}
           {course && (
-            <div className="bg-card rounded-lg border p-8">
+            <Card padding="lg">
               <div className="flex items-start justify-between mb-6">
                 <div>
                   <h2 className="text-3xl font-bold mb-3">{course.title}</h2>
                   <p className="text-muted-foreground mb-4 text-lg">{course.description}</p>
-                  <div className="flex gap-6 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <IconBook className="w-4 h-4" />
-                      <span>{course.lessons.length} lessons</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <IconLoader2 className="w-4 h-4" />
-                      <span>{course.estimatedDuration}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <IconBrain className="w-4 h-4" />
-                      <span>{course.difficulty}</span>
-                    </div>
-                  </div>
+                  <InfoList>
+                    <InfoItem icon={<IconBook className="w-4 h-4" />} label={`${course.lessons.length} lessons`} />
+                    <InfoItem icon={<IconLoader2 className="w-4 h-4" />} label={course.estimatedDuration} />
+                    <InfoItem icon={<IconBrain className="w-4 h-4" />} label={course.difficulty} />
+                  </InfoList>
                 </div>
                 <Link href={`/course/${course.id}`}>
                   <Button size="lg" className="bg-primary hover:bg-primary/90">
@@ -313,33 +287,31 @@ export default function GenerateCoursePage() {
               <div className="space-y-4">
                 <h3 className="text-xl font-semibold">Course Outline</h3>
                 {course.lessons.map((lesson, index) => (
-                  <div
+                  <Card
                     key={lesson.id}
-                    className="flex items-center justify-between p-4 bg-muted rounded-lg hover:shadow-md transition-shadow"
+                    variant="muted"
+                    padding="md"
+                    hover
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
-                        {index + 1}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-lg">{lesson.title}</h4>
+                          <p className="text-muted-foreground">{lesson.content}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h4 className="font-semibold text-lg">{lesson.title}</h4>
-                        <p className="text-muted-foreground">{lesson.content}</p>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <span>{lesson.duration}</span>
+                        <DifficultyBadge difficulty={lesson.difficulty} />
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                      <span>{lesson.duration}</span>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        lesson.difficulty === 'Beginner' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
-                        lesson.difficulty === 'Intermediate' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
-                        'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                      }`}>
-                        {lesson.difficulty}
-                      </span>
-                    </div>
-                  </div>
+                  </Card>
                 ))}
               </div>
-            </div>
+            </Card>
           )}
         </div>
       </section>

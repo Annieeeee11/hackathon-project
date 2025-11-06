@@ -6,6 +6,11 @@ import ChatBox from "@/components/lessons/ChatBox";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
 import { IconCheck, IconCircle } from "@tabler/icons-react";
+import { Card } from "@/components/common/Card";
+import { ProgressBar } from "@/components/common/ProgressBar";
+import { TagList, Tag } from "@/components/common/Tag";
+import { InfoItem, InfoList } from "@/components/common/InfoItem";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 interface Lesson {
   id: string;
@@ -14,6 +19,7 @@ interface Lesson {
   lesson_type: string;
   order_number: number;
   duration_minutes: number;
+  duration?: string;
   objectives: string[];
   is_published: boolean;
 }
@@ -137,10 +143,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading course...</p>
-        </div>
+        <LoadingSpinner text="Loading course..." />
       </div>
     );
   }
@@ -165,11 +168,11 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">{course.title}</h1>
               <p className="text-gray-600 mt-2">{course.description}</p>
-              <div className="flex items-center space-x-4 mt-3 text-sm text-gray-500">
+              <InfoList className="mt-3">
                 <span>📚 {course.total_lessons} lessons</span>
                 <span>⏱️ {course.estimated_hours} hours</span>
                 <span>🎯 {course.difficulty_level}</span>
-              </div>
+              </InfoList>
             </div>
             <div className="flex space-x-2">
               <button
@@ -187,18 +190,16 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content Area */}
           <div className="lg:col-span-2 space-y-6">
-            {/* 3D Avatar */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <Card variant="white">
               <h2 className="text-xl font-semibold mb-4">AI Professor</h2>
               <Avatar3D
                 isSpeaking={isAvatarSpeaking}
                 currentMessage={currentSpeakingText}
               />
-            </div>
+            </Card>
 
-            {/* Current Lesson */}
             {currentLesson && (
-              <div className="bg-white rounded-lg shadow-sm p-6">
+              <Card variant="white">
                 <h2 className="text-xl font-semibold mb-4">{currentLesson.title}</h2>
                 <div className="prose max-w-none">
                   <p className="text-gray-700 leading-relaxed">{currentLesson.content}</p>
@@ -213,43 +214,38 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                     </ul>
                   </div>
                 )}
-              </div>
+              </Card>
             )}
 
-            {/* Chat Interface */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <Card variant="white">
               <h2 className="text-xl font-semibold mb-4">Ask Your AI Professor</h2>
-              
-              
               <ChatBox
                 lessonId={currentLesson?.id || ''}
               />
-            </div>
+            </Card>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Course Progress */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <Card variant="white">
               <h3 className="text-lg font-semibold mb-4">Course Progress</h3>
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
                   <span>Progress</span>
                   <span>{progressPercentage}%</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-blue-500 h-2 rounded-full transition-all duration-500" 
-                    style={{ width: `${progressPercentage}%` }}
-                  ></div>
-                </div>
+                <ProgressBar
+                  current={completedLessons.size}
+                  total={course.lessons?.length || 0}
+                  showPercentage={false}
+                />
                 <p className="text-sm text-gray-600">
                   {completedLessons.size} of {course.lessons?.length || 0} lessons completed
                 </p>
               </div>
-            </div>
+            </Card>
 
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <Card variant="white">
               <h3 className="text-lg font-semibold mb-4">Lessons</h3>
               <div className="space-y-2">
                 {course.lessons?.map((lesson) => {
@@ -292,22 +288,22 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                   );
                 })}
               </div>
-            </div>
+            </Card>
 
-            {/* Course Tags */}
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <Card variant="white">
               <h3 className="text-lg font-semibold mb-4">Topics</h3>
-              <div className="flex flex-wrap gap-2">
+              <TagList>
                 {course.tags?.map((tag, index) => (
-                  <span
+                  <Tag
                     key={index}
-                    className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full"
+                    variant="primary"
+                    className="bg-blue-100 text-blue-800"
                   >
                     {tag}
-                  </span>
+                  </Tag>
                 ))}
-              </div>
-            </div>
+              </TagList>
+            </Card>
           </div>
         </div>
       </div>

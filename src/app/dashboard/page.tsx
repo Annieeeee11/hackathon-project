@@ -20,6 +20,7 @@ import { Course, Lesson, Stats } from "@/lib/types";
 import { StatCard } from "@/components/common/StatCard";
 import { EmptyState } from "@/components/common/EmptyState";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { Card } from "@/components/common/Card";
 import { ROUTES } from "@/lib/constants";
 
 export default function Dashboard() {
@@ -230,10 +231,10 @@ export default function Dashboard() {
           </div>
 
 
-          <div className="bg-card rounded-lg border p-6">
+          <Card>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold">My Courses</h2>
-              <Link href="/generate-course">
+              <Link href={ROUTES.generateCourse}>
                 <Button>
                   <IconBrain className="w-4 h-4 mr-2" />
                   Generate New Course
@@ -255,16 +256,16 @@ export default function Dashboard() {
                 actionHref={ROUTES.generateCourse}
               />
             )}
-          </div>
+          </Card>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-card rounded-lg border p-6">
-              <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
-              <ActivityFeed />
-            </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                  <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
+                  <ActivityFeed />
+                </Card>
 
-            <QuickActions/>
-          </div>
+                <QuickActions/>
+              </div>
       </div>
     </AppLayout>
   );

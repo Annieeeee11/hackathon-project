@@ -20,6 +20,10 @@ import {
 import { ModeToggle } from "@/components/modeToggle";
 import { supabase } from "@/lib/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
+import { Card } from "@/components/common/Card";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { DifficultyBadge } from "@/components/common/DifficultyBadge";
+import { PageHeader } from "@/components/common/PageHeader";
 
 interface Lesson {
   id: string;
@@ -228,10 +232,7 @@ export default function LessonPage({ params }: LessonPageProps) {
       <AppLayout>
         <div className="flex h-screen bg-background">
           <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <IconLoader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-primary" />
-              <p className="text-muted-foreground">Loading lesson...</p>
-            </div>
+            <LoadingSpinner text="Loading lesson..." />
           </div>
         </div>
       </AppLayout>
