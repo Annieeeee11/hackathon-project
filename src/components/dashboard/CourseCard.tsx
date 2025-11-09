@@ -11,19 +11,20 @@ const formatDate = (dateString: string): string => {
 }
 
 interface Lesson {
-  id: number;
+  id: string;
   title: string;
   completed: boolean;
 }
 
 interface Course {
-  id: string | number;
+  id: string;
   title: string;
   description: string;
-  duration?: string;
-  lessons?: Lesson[];
-  tags?: string[];
+  duration: string;
+  lessons: Lesson[];
+  tags: string[];
   created_at: string;
+  progress_percentage?: number;
 }
 
 interface CourseCardProps {
