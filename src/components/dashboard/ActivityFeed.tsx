@@ -109,20 +109,25 @@ export default function ActivityFeed() {
           .order('completed_at', { ascending: false })
           .limit(10);
 
+        interface LessonData {
+          title: string;
+          courses: {
+            title: string;
+          } | null;
+        }
+
         interface CompletedLessonData {
           lesson_id: string;
           completed_at: string;
-          lessons: {
-            title: string;
-            courses: {
-              title: string;
-            } | null;
-          } | null;
+          lessons: LessonData | LessonData[] | null;
         }
 
         if (completedLessons) {
           completedLessons.forEach((progress: CompletedLessonData) => {
-            const lesson = progress.lessons;
+            // Handle lessons as array or single object
+            const lesson = Array.isArray(progress.lessons) 
+              ? progress.lessons[0] 
+              : progress.lessons;
             const course = lesson?.courses;
             allActivities.push({
               id: `lesson-${progress.lesson_id}`,
@@ -148,21 +153,27 @@ export default function ActivityFeed() {
           .order('enrollment_date', { ascending: false })
           .limit(5);
 
+        interface CourseTitleData {
+          title: string;
+        }
+
         interface EnrollmentData {
           enrollment_date: string;
-          courses: {
-            title: string;
-          } | null;
+          courses: CourseTitleData | CourseTitleData[] | null;
         }
 
         if (enrollments) {
           enrollments.forEach((enrollment: EnrollmentData) => {
+            // Handle courses as array or single object
+            const course = Array.isArray(enrollment.courses) 
+              ? enrollment.courses[0] 
+              : enrollment.courses;
             allActivities.push({
               id: `enrollment-${enrollment.enrollment_date}`,
               type: "started",
-              message: `Started course: ${enrollment.courses?.title || 'Unknown'}`,
+              message: `Started course: ${course?.title || 'Unknown'}`,
               time: formatTimeAgo(new Date(enrollment.enrollment_date)),
-              course: enrollment.courses?.title,
+              course: course?.title,
               timestamp: new Date(enrollment.enrollment_date)
             });
           });
@@ -196,15 +207,17 @@ export default function ActivityFeed() {
         }
 
         // Fetch completed assessments
+        interface AssessmentData {
+          title: string;
+          courses: {
+            title: string;
+          } | null;
+        }
+
         interface AssessmentAttemptData {
           completed_at: string;
           score: number;
-          assessments: {
-            title: string;
-            courses: {
-              title: string;
-            } | null;
-          } | null;
+          assessments: AssessmentData | AssessmentData[] | null;
         }
 
         const { data: assessments } = await supabase
@@ -226,7 +239,10 @@ export default function ActivityFeed() {
 
         if (assessments) {
           assessments.forEach((attempt: AssessmentAttemptData) => {
-            const assessment = attempt.assessments;
+            // Handle assessments as array or single object
+            const assessment = Array.isArray(attempt.assessments) 
+              ? attempt.assessments[0] 
+              : attempt.assessments;
             const course = assessment?.courses;
             allActivities.push({
               id: `assessment-${attempt.completed_at}`,
