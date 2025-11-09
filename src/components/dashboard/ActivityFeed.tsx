@@ -109,11 +109,13 @@ export default function ActivityFeed() {
           .order('completed_at', { ascending: false })
           .limit(10);
 
+        interface CourseTitleData {
+          title: string;
+        }
+
         interface LessonData {
           title: string;
-          courses: {
-            title: string;
-          } | null;
+          courses: CourseTitleData | CourseTitleData[] | null;
         }
 
         interface CompletedLessonData {
@@ -128,7 +130,10 @@ export default function ActivityFeed() {
             const lesson = Array.isArray(progress.lessons) 
               ? progress.lessons[0] 
               : progress.lessons;
-            const course = lesson?.courses;
+            // Handle courses as array or single object
+            const course = lesson?.courses 
+              ? (Array.isArray(lesson.courses) ? lesson.courses[0] : lesson.courses)
+              : null;
             allActivities.push({
               id: `lesson-${progress.lesson_id}`,
               type: "completed",
