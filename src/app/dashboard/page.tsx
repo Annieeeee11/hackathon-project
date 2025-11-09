@@ -159,17 +159,16 @@ export default function Dashboard() {
               completed: completedLessonIds.has(lesson.id)
             }));
 
-            return {
+            const courseData: Course = {
               id: course.id,
               title: course.title,
               description: course.description || '',
               duration: course.duration || '4 weeks',
               tags: course.tags || [],
               lessons: lessonsWithProgress,
-              created_at: course.created_at,
-              progress_percentage: enrollment.progress_percentage || 0,
-              estimated_hours: course.estimated_hours || 0
+              created_at: course.created_at
             };
+            return courseData;
           })
         );
 

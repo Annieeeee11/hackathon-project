@@ -28,11 +28,11 @@ interface Course {
   id: string;
   title: string;
   description: string;
-  duration?: string;
-  lessons?: Lesson[];
-  tags?: string[];
+  duration: string;
+  lessons: Lesson[];
+  tags: string[];
   created_at: string;
-  progress_percentage?: number;
+  progress_percentage: number;
 }
 
 export default function CoursesPage() {
@@ -144,7 +144,7 @@ export default function CoursesPage() {
               completed: completedLessonIds.has(lesson.id)
             }));
 
-            return {
+            const courseData: Course = {
               id: course.id,
               title: course.title,
               description: course.description || '',
@@ -154,6 +154,7 @@ export default function CoursesPage() {
               created_at: course.created_at,
               progress_percentage: enrollment.progress_percentage || 0
             };
+            return courseData;
           })
         );
 
