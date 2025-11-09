@@ -214,9 +214,7 @@ export default function ActivityFeed() {
         // Fetch completed assessments
         interface AssessmentData {
           title: string;
-          courses: {
-            title: string;
-          } | null;
+          courses: CourseTitleData | CourseTitleData[] | null;
         }
 
         interface AssessmentAttemptData {
@@ -248,7 +246,10 @@ export default function ActivityFeed() {
             const assessment = Array.isArray(attempt.assessments) 
               ? attempt.assessments[0] 
               : attempt.assessments;
-            const course = assessment?.courses;
+            // Handle courses as array or single object
+            const course = assessment?.courses 
+              ? (Array.isArray(assessment.courses) ? assessment.courses[0] : assessment.courses)
+              : null;
             allActivities.push({
               id: `assessment-${attempt.completed_at}`,
               type: "assessment",
