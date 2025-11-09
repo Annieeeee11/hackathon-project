@@ -109,8 +109,19 @@ export default function ActivityFeed() {
           .order('completed_at', { ascending: false })
           .limit(10);
 
+        interface CompletedLessonData {
+          lesson_id: string;
+          completed_at: string;
+          lessons: {
+            title: string;
+            courses: {
+              title: string;
+            } | null;
+          } | null;
+        }
+
         if (completedLessons) {
-          completedLessons.forEach((progress: any) => {
+          completedLessons.forEach((progress: CompletedLessonData) => {
             const lesson = progress.lessons;
             const course = lesson?.courses;
             allActivities.push({
@@ -137,8 +148,15 @@ export default function ActivityFeed() {
           .order('enrollment_date', { ascending: false })
           .limit(5);
 
+        interface EnrollmentData {
+          enrollment_date: string;
+          courses: {
+            title: string;
+          } | null;
+        }
+
         if (enrollments) {
-          enrollments.forEach((enrollment: any) => {
+          enrollments.forEach((enrollment: EnrollmentData) => {
             allActivities.push({
               id: `enrollment-${enrollment.enrollment_date}`,
               type: "started",
@@ -151,6 +169,12 @@ export default function ActivityFeed() {
         }
 
         // Fetch generated courses
+        interface GeneratedCourseData {
+          id: string;
+          title: string;
+          created_at: string;
+        }
+
         const { data: generatedCourses } = await supabase
           .from('courses')
           .select('id, title, created_at')
@@ -159,7 +183,7 @@ export default function ActivityFeed() {
           .limit(5);
 
         if (generatedCourses) {
-          generatedCourses.forEach((course: any) => {
+          generatedCourses.forEach((course: GeneratedCourseData) => {
             allActivities.push({
               id: `generated-${course.id}`,
               type: "generated",
@@ -172,6 +196,17 @@ export default function ActivityFeed() {
         }
 
         // Fetch completed assessments
+        interface AssessmentAttemptData {
+          completed_at: string;
+          score: number;
+          assessments: {
+            title: string;
+            courses: {
+              title: string;
+            } | null;
+          } | null;
+        }
+
         const { data: assessments } = await supabase
           .from('assessment_attempts')
           .select(`
@@ -190,7 +225,7 @@ export default function ActivityFeed() {
           .limit(5);
 
         if (assessments) {
-          assessments.forEach((attempt: any) => {
+          assessments.forEach((attempt: AssessmentAttemptData) => {
             const assessment = attempt.assessments;
             const course = assessment?.courses;
             allActivities.push({
@@ -205,6 +240,12 @@ export default function ActivityFeed() {
         }
 
         // Fetch achievements
+        interface AchievementData {
+          title: string;
+          description: string;
+          earned_at: string;
+        }
+
         const { data: achievements } = await supabase
           .from('achievements')
           .select('title, description, earned_at')
@@ -213,7 +254,7 @@ export default function ActivityFeed() {
           .limit(5);
 
         if (achievements) {
-          achievements.forEach((achievement: any) => {
+          achievements.forEach((achievement: AchievementData) => {
             allActivities.push({
               id: `achievement-${achievement.earned_at}`,
               type: "achievement",

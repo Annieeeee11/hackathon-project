@@ -84,13 +84,37 @@ export default function CoursesPage() {
         }
 
         // Fetch lessons and progress for each course
+        interface EnrollmentData {
+          course_id: string;
+          progress_percentage: number;
+          courses: {
+            id: string;
+            title: string;
+            description: string;
+            duration: string;
+            tags: string[];
+            created_at: string;
+          } | null;
+        }
+
+        interface LessonData {
+          id: string;
+          title: string;
+          order_index: number;
+        }
+
+        interface ProgressData {
+          lesson_id: string;
+          completed: boolean;
+        }
+
         const coursesWithProgress = await Promise.all(
-          enrollments.map(async (enrollment: any) => {
+          enrollments.map(async (enrollment: EnrollmentData) => {
             const course = enrollment.courses;
             if (!course) return null;
 
             // Fetch lessons for this course
-            const { data: lessons, error: lessonsError } = await supabase
+            const { data: lessons } = await supabase
               .from('lessons')
               .select('id, title, order_index')
               .eq('course_id', course.id)
@@ -98,7 +122,7 @@ export default function CoursesPage() {
               .order('order_index', { ascending: true });
 
             // Fetch user progress for lessons
-            const { data: progress, error: progressError } = await supabase
+            const { data: progress } = await supabase
               .from('user_progress')
               .select('lesson_id, completed')
               .eq('user_id', user.id)
@@ -106,10 +130,10 @@ export default function CoursesPage() {
               .eq('completed', true);
 
             const completedLessonIds = new Set(
-              (progress || []).map((p: any) => p.lesson_id)
+              (progress || []).map((p: ProgressData) => p.lesson_id)
             );
 
-            const lessonsWithProgress: Lesson[] = (lessons || []).map((lesson: any) => ({
+            const lessonsWithProgress: Lesson[] = (lessons || []).map((lesson: LessonData) => ({
               id: lesson.id,
               title: lesson.title,
               completed: completedLessonIds.has(lesson.id)

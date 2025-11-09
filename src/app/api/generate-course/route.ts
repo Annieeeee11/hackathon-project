@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import getOpenAI from '@/lib/openaiClient'
-import { supabase, supabaseAdmin, dbHelpers } from '@/lib/supabaseClient'
+import { supabase, supabaseAdmin } from '@/lib/supabaseClient'
 
 export async function POST(request: NextRequest) {
   try {
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
         estimatedDuration: savedCourse.duration,
         difficulty_level: savedCourse.difficulty_level,
         estimated_hours: savedCourse.estimated_hours,
-        lessons: savedLessons.map((lesson, index) => ({
+        lessons: savedLessons.map((lesson) => ({
           id: lesson.id,
           title: lesson.title,
           content: lesson.content || lesson.explanation || '',

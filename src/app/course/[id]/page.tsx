@@ -5,16 +5,18 @@ import Avatar3D from "@/components/lessons/Avatar3D";
 import ChatBox from "@/components/lessons/ChatBox";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
-import { IconCheck, IconCircle } from "@tabler/icons-react";
+import { IconCheck } from "@tabler/icons-react";
 
 interface Lesson {
   id: string;
   title: string;
   content: string;
-  lesson_type: string;
-  order_number: number;
-  duration_minutes: number;
-  objectives: string[];
+  lesson_type?: string;
+  order_number?: number;
+  order_index?: number;
+  duration_minutes?: number;
+  duration?: string;
+  objectives?: string[];
   is_published: boolean;
 }
 
@@ -76,9 +78,18 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
         }
 
         // Sort lessons by order_index
+        interface LessonData {
+          id: string;
+          title: string;
+          content: string;
+          duration: string;
+          order_index: number;
+          is_published: boolean;
+        }
+        
         const sortedLessons = (courseData.lessons || [])
-          .filter((l: any) => l.is_published)
-          .sort((a: any, b: any) => a.order_index - b.order_index);
+          .filter((l: LessonData) => l.is_published)
+          .sort((a: LessonData, b: LessonData) => a.order_index - b.order_index);
 
         setCourse({
           ...courseData,
@@ -99,7 +110,11 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
             .eq('completed', true);
 
           if (progressData) {
-            const completedSet = new Set(progressData.map((p: any) => p.lesson_id));
+            interface ProgressData {
+              lesson_id: string;
+              completed: boolean;
+            }
+            const completedSet = new Set(progressData.map((p: ProgressData) => p.lesson_id));
             setCompletedLessons(completedSet);
 
             // Calculate progress percentage
@@ -276,7 +291,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                               <IconCheck className="w-4 h-4 text-green-600" />
                             )}
                           </div>
-                          <p className="text-xs text-gray-500">{lesson.duration || '30 min'}</p>
+                          <p className="text-xs text-gray-500">{lesson.duration || lesson.duration_minutes ? `${lesson.duration_minutes} min` : '30 min'}</p>
                         </div>
                         <div className="ml-2">
                           {isCompleted ? (
