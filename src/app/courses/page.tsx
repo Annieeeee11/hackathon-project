@@ -84,17 +84,19 @@ export default function CoursesPage() {
         }
 
         // Fetch lessons and progress for each course
+        interface CourseData {
+          id: string;
+          title: string;
+          description: string;
+          duration: string;
+          tags: string[];
+          created_at: string;
+        }
+
         interface EnrollmentData {
           course_id: string;
           progress_percentage: number;
-          courses: {
-            id: string;
-            title: string;
-            description: string;
-            duration: string;
-            tags: string[];
-            created_at: string;
-          } | null;
+          courses: CourseData | CourseData[] | null;
         }
 
         interface LessonData {
@@ -110,7 +112,10 @@ export default function CoursesPage() {
 
         const coursesWithProgress = await Promise.all(
           enrollments.map(async (enrollment: EnrollmentData) => {
-            const course = enrollment.courses;
+            // Handle courses as array or single object
+            const course = Array.isArray(enrollment.courses) 
+              ? enrollment.courses[0] 
+              : enrollment.courses;
             if (!course) return null;
 
             // Fetch lessons for this course
